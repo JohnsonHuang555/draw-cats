@@ -29,8 +29,20 @@ export type Eyes =
   | 'up'
   /** Crossed, mismatched pupils. */
   | 'derp';
-export type Mouth = 'w' | 'frown' | 'open' | 'o' | 'smile' | 'flat' | 'smirk' | 'polite' | 'huge' | 'blep';
-export type Pose = 'sit' | 'loaf' | 'stand';
+export type Mouth =
+  | 'w'
+  | 'frown'
+  | 'open'
+  | 'o'
+  | 'smile'
+  | 'flat'
+  | 'smirk'
+  | 'polite'
+  | 'huge'
+  | 'blep'
+  /** Jaw dropped a little, two small fangs: a bewildered "huh?". */
+  | 'gasp';
+export type Pose = 'sit' | 'loaf' | 'stand' | 'chonk';
 export type Paint = string | CanvasGradient;
 export type Draw = (ctx: CanvasRenderingContext2D) => void;
 export type Head = { x: number; y: number; s: number };
@@ -52,6 +64,8 @@ export interface CatSpec {
   flatEars?: boolean;
   /** Lynx-style black tufts on the ear tips (Big Floppa). */
   tufts?: boolean;
+  /** Colour of a tabby patch on the left flank (chonk pose only). */
+  bodyPatch?: string;
   /** Soaked fur: drips and clumped strands over the head. */
   wet?: boolean;
   spiky?: boolean;
@@ -166,7 +180,44 @@ export function drawBody(ctx: CanvasRenderingContext2D, head: Head, spec: CatSpe
   ctx.lineWidth = 6;
   const belly = spec.tuxedo ? '#ffffff' : spec.muzzle;
 
-  if (spec.pose === 'loaf') {
+  if (spec.pose === 'chonk') {
+    // Very round, pear-shaped body under a small head
+    ctx.beginPath();
+    ctx.moveTo(-70, 40);
+    ctx.bezierCurveTo(-210, 120, -200, 330, -40, 340);
+    ctx.lineTo(40, 340);
+    ctx.bezierCurveTo(200, 330, 210, 120, 70, 40);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+    if (spec.bodyPatch) {
+      // Tabby patch over the left flank
+      ctx.save();
+      ctx.clip();
+      ctx.fillStyle = spec.bodyPatch;
+      ctx.beginPath();
+      ctx.ellipse(-150, 170, 70, 130, 0.15, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#141216';
+      ctx.lineWidth = 9;
+      for (const y of [110, 150, 190, 230]) {
+        ctx.beginPath();
+        ctx.moveTo(-200, y);
+        ctx.quadraticCurveTo(-150, y - 14, -96, y + 6);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+    ctx.fillStyle = furFill(ctx, spec);
+    ctx.strokeStyle = INK;
+    ctx.lineWidth = 6;
+    for (const side of [-1, 1]) {
+      ctx.beginPath();
+      ctx.ellipse(side * 55, 335, 34, 20, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+    }
+  } else if (spec.pose === 'loaf') {
     // Lying down, body stretching to the left
     ctx.beginPath();
     ctx.ellipse(-150, 55, 210, 95, 0, 0, Math.PI * 2);
@@ -446,11 +497,23 @@ export function drawEye(ctx: CanvasRenderingContext2D, x: number, y: number, sid
       ctx.beginPath();
       ctx.arc(x, y, 28, 0, Math.PI * 2);
       ctx.fill();
+      if (spec.iris) {
+        ctx.fillStyle = spec.iris;
+        ctx.beginPath();
+        ctx.arc(x, y, 20, 0, Math.PI * 2);
+        ctx.fill();
+      }
       ctx.stroke();
       ctx.fillStyle = INK;
       ctx.beginPath();
-      ctx.arc(x, y, 8, 0, Math.PI * 2);
+      ctx.arc(x, y, spec.iris ? 7 : 8, 0, Math.PI * 2);
       ctx.fill();
+      if (spec.iris) {
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(x - 6, y - 7, 4, 0, Math.PI * 2);
+        ctx.fill();
+      }
       return;
     case 'laser':
       ctx.fillStyle = 'rgba(255, 40, 40, 0.3)';
@@ -659,6 +722,28 @@ export function drawMouth(ctx: CanvasRenderingContext2D, mouth: Mouth, darkFur?:
       ctx.ellipse(0, 48, 10, 13, 0, 0, Math.PI * 2);
       ctx.fill();
       ctx.stroke();
+      return;
+    case 'gasp':
+      ctx.fillStyle = '#5a1424';
+      ctx.beginPath();
+      ctx.moveTo(-15, 40);
+      ctx.quadraticCurveTo(0, 34, 15, 40);
+      ctx.quadraticCurveTo(14, 72, 0, 74);
+      ctx.quadraticCurveTo(-14, 72, -15, 40);
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = '#f07890';
+      ctx.beginPath();
+      ctx.ellipse(0, 66, 9, 6, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#ffffff';
+      for (const side of [-1, 1]) {
+        ctx.beginPath();
+        ctx.moveTo(side * 12, 40);
+        ctx.lineTo(side * 7, 52);
+        ctx.lineTo(side * 4, 39);
+        ctx.fill();
+      }
       return;
     case 'blep':
       ctx.fillStyle = '#f07890';

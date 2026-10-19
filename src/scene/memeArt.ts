@@ -128,19 +128,30 @@ export const MEME_SPECS: Record<string, CatSpec> = {
     back: (ctx, _a, head) => burstLines(ctx, head.x, head.y + 50, 12, 165, 215, 'rgba(255,255,255,0.55)'),
   },
   'r-huh': {
-    // Chubby white cat with a black cap, mouth open: "huh?"
+    // Ben: a very round white cat with a small head, a thin black comb-over,
+    // pale green eyes staring blankly and a dropped jaw - "huh?"
     fur: '#fbfbf8',
     eyes: 'wide',
-    mouth: 'o',
-    pose: 'sit',
-    dy: -25,
+    iris: '#b9c9a4',
+    mouth: 'gasp',
+    pose: 'chonk',
+    bodyPatch: '#4a4650',
+    s: 0.76,
+    dy: -98,
+    tilt: -0.08,
     cover: (ctx) => {
-      ctx.fillStyle = '#2a262e';
+      // Wavy comb-over across the forehead
+      ctx.fillStyle = '#1e1c22';
       ctx.beginPath();
-      ctx.ellipse(10, -78, 80, 36, 0.1, 0, Math.PI * 2);
+      ctx.moveTo(-78, -66);
+      ctx.bezierCurveTo(-60, -96, -20, -82, 0, -92);
+      ctx.bezierCurveTo(24, -102, 60, -84, 82, -70);
+      ctx.lineTo(80, -58);
+      ctx.bezierCurveTo(50, -70, 24, -76, 4, -68);
+      ctx.bezierCurveTo(-24, -60, -54, -72, -78, -54);
+      ctx.closePath();
       ctx.fill();
     },
-    earColor: '#2a262e',
     front: (ctx, a) => {
       bigText(ctx, '？', a.x + a.w - 70, a.y + 80, 90, '#ffffff', -0.2);
       bigText(ctx, 'huh', a.x + 80, a.y + 70, 52, '#ffffff', 0.15);

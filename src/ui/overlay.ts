@@ -223,6 +223,7 @@ export class Overlay {
       this.traits.innerHTML = `<li class="meme"><span>迷因貓</span><b>${card.title}</b></li>`;
     }
     this.toggle(this.traits, !!card);
+    this.traits.parentElement?.classList.toggle('inspecting', !!card);
   }
 
   showCaption(card: Card | null) {

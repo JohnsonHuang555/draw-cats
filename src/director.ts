@@ -756,7 +756,9 @@ export class Director {
     const pack = new PackView();
     this.pack = pack;
     const view = this.stage.viewSize(0);
-    const scale = Math.min(1, (view.w * 0.68) / PACK_W, (view.h * 0.5) / PACK_H);
+    // Portrait phones stack the title above and the buttons below, so the Pack gets less height.
+    const maxH = view.w < view.h ? 0.42 : 0.5;
+    const scale = Math.min(1, (view.w * 0.68) / PACK_W, (view.h * maxH) / PACK_H);
     pack.root.scale.setScalar(scale);
     pack.root.position.set(0, -9, 0);
     pack.color.copy(HOME_PACK_COLOR);
@@ -773,8 +775,10 @@ export class Director {
   /** Summary grid: picks the column count that makes cards largest, leaving room for header and buttons. */
   private gridLayout(n: number): Slot[] {
     const view = this.stage.viewSize(0);
-    const top = 0.13;
-    const bottom = 0.2;
+    // Room for the title above and the buttons below; phones put the title under the wallet row.
+    const portrait = view.w < view.h;
+    const top = portrait ? 0.21 : 0.13;
+    const bottom = portrait ? 0.13 : 0.2;
     const availW = view.w * 0.92;
     const availH = view.h * (1 - top - bottom);
     const centerY = (view.h * (bottom - top)) / 2;
