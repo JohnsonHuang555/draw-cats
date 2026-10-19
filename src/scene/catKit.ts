@@ -202,7 +202,7 @@ export function drawBody(ctx: CanvasRenderingContext2D, head: Head, spec: CatSpe
 
   if (spec.pose === 'quad') {
     // Standing on all fours in three-quarter view. Draw order hides every leg root:
-    // hind legs, then the body over them, then the front legs whose tops tuck under the head.
+    // hind legs, then the body, then front legs tucked under the chest, then the head on top.
     const leg = (x: number, top: number, h: number) => {
       ctx.fillStyle = furFill(ctx, spec);
       ctx.beginPath();
@@ -222,11 +222,22 @@ export function drawBody(ctx: CanvasRenderingContext2D, head: Head, spec: CatSpe
     ctx.ellipse(-95, 118, 150, 88, -0.05, 0, Math.PI * 2);
     ctx.fill();
     ctx.stroke();
-    // Chest between the front legs, so the background never shows through the gap
+    // Front legs come out from under a rounded chest that sits below the chin
+    leg(-42, 140, 142);
+    leg(42, 140, 142);
     ctx.fillStyle = furFill(ctx, spec);
-    ctx.fillRect(-46, 60, 92, 150);
-    leg(-44, 70, 212);
-    leg(44, 70, 212);
+    ctx.strokeStyle = INK;
+    ctx.lineWidth = 6;
+    ctx.beginPath();
+    ctx.ellipse(0, 128, 82, 74, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    if (belly) {
+      ctx.fillStyle = belly;
+      ctx.beginPath();
+      ctx.ellipse(0, 138, 42, 52, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
   } else if (spec.pose === 'chonk') {
     // Very round, pear-shaped body under a small head
     ctx.beginPath();
