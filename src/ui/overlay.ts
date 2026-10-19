@@ -4,6 +4,7 @@ import { traitShare } from '../domain/generated';
 import type { PullKind } from '../domain/pull';
 import { TRAIT_KEYS, TRAIT_LABELS, traitValue } from '../domain/traits';
 import { RARITY_CSS } from '../scene/palette';
+import { AlbumView } from './albumView';
 
 export type SummaryAction = PullKind | 'home';
 
@@ -26,6 +27,9 @@ export class Overlay {
   onSummary?: (action: SummaryAction) => void;
   onRevealAll?: () => void;
   onMute?: (muted: boolean) => void;
+  onOpenAlbum?: () => void;
+  onClearAlbum?: () => void;
+  readonly album = new AlbumView();
 
   private home = el('section', 'home panel');
   private prompt = el('div', 'prompt');
@@ -45,6 +49,7 @@ export class Overlay {
       </header>
       <footer>
         <div class="actions">
+          <button class="btn" data-open-album>卡冊</button>
           <button class="btn" data-pull="single">單抽</button>
           <button class="btn btn-primary" data-pull="ten">十連抽</button>
         </div>
@@ -60,12 +65,19 @@ export class Overlay {
       <p class="summary-hint">點擊卡片查看</p>
       <div class="actions summary-actions">
         <button class="btn" data-action="home">返回</button>
+        <button class="btn" data-open-album>卡冊</button>
         <button class="btn" data-action="single">再抽一次</button>
         <button class="btn btn-primary" data-action="ten">十連抽</button>
       </div>
     `;
     this.summary.querySelectorAll<HTMLButtonElement>('[data-action]').forEach((b) =>
       b.addEventListener('click', () => this.onSummary?.(b.dataset.action as SummaryAction)),
+    );
+
+    [this.home, this.summary].forEach((panel) =>
+      panel.querySelectorAll<HTMLButtonElement>('[data-open-album]').forEach((b) =>
+        b.addEventListener('click', () => this.onOpenAlbum?.()),
+      ),
     );
 
     this.revealAll.addEventListener('click', () => this.onRevealAll?.());
@@ -88,7 +100,11 @@ export class Overlay {
         <strong>開發者面板</strong>
         <label><input type="checkbox" data-dev="forceSSR" /> 強制 SSR</label>
         <label><input type="checkbox" data-dev="forceFakeOut" /> 強制 Fake-out</label>
+        <button class="dev-clear">清空卡冊</button>
       `;
+      panel.querySelector('.dev-clear')!.addEventListener('click', () => {
+        if (window.confirm('確定要清空卡冊嗎？')) this.onClearAlbum?.();
+      });
       panel.querySelectorAll<HTMLInputElement>('[data-dev]').forEach((input) =>
         input.addEventListener('change', () => {
           this.dev[input.dataset.dev as keyof DevOptions] = input.checked;
@@ -98,7 +114,7 @@ export class Overlay {
       toolbar.append(devBtn, panel);
     }
 
-    root.append(this.home, this.prompt, this.revealAll, this.caption, this.summary, this.traits, toolbar, this.flashLayer);
+    root.append(this.home, this.prompt, this.revealAll, this.caption, this.summary, this.album.el, this.traits, toolbar, this.flashLayer);
   }
 
   showHome(visible: boolean) {

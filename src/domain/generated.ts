@@ -4,6 +4,9 @@ import { TRAITS, TRAIT_KEYS, traitValue, type TraitKey, type TraitValue, type Tr
 
 export const COLLECTION_SIZE = 9999;
 
+/** The generator this code implements. Album entries record it so old cats can keep their look. */
+export const GENERATOR_VERSION = 1;
+
 /** How many Traits are forced to a rare value, by Rarity. N and R never get rare values. */
 const RARE_TRAITS: Record<Rarity, number> = { N: 0, R: 0, SR: 1, SSR: 2 };
 

@@ -54,12 +54,35 @@ const FRAME: Record<Rarity, [string, string, string]> = {
 
 const STARS: Record<Rarity, number> = { N: 1, R: 2, SR: 3, SSR: 4 };
 
+/** Most recently used card faces. Bounded, since every Generated Cat is a new texture. */
 const frontCache = new Map<string, Texture>();
+const FRONT_CACHE_MAX = 60;
 
 export function cardFrontTexture(card: Card): Texture {
   const cached = frontCache.get(card.id);
-  if (cached) return cached;
+  if (cached) {
+    frontCache.delete(card.id);
+    frontCache.set(card.id, cached);
+    return cached;
+  }
+  let tex: Texture | undefined;
+  tex = toTexture(paintCardFront(card, () => {
+    if (tex) tex.needsUpdate = true;
+  }));
+  frontCache.set(card.id, tex);
+  if (frontCache.size > FRONT_CACHE_MAX) {
+    const [oldestId, oldest] = frontCache.entries().next().value!;
+    frontCache.delete(oldestId);
+    oldest.dispose();
+  }
+  return tex;
+}
 
+/**
+ * Draws a card face onto a new full-size canvas. If a custom image exists for the card, it is
+ * painted in once loaded and `onRepaint` is called.
+ */
+export function paintCardFront(card: Card, onRepaint?: (canvas: HTMLCanvasElement) => void): HTMLCanvasElement {
   const W = CARD_TEX_W;
   const H = CARD_TEX_H;
   const [canvas, ctx] = makeCanvas(W, H);
@@ -141,9 +164,6 @@ export function cardFrontTexture(card: Card): Texture {
   ctx.stroke();
   ctx.globalAlpha = 1;
 
-  const tex = toTexture(canvas);
-  frontCache.set(card.id, tex);
-
   // A real image dropped into src/assets/cards/ replaces the cartoon once it loads.
   const customUrl = CUSTOM_ART.get(card.id);
   if (customUrl) {
@@ -158,11 +178,11 @@ export function cardFrontTexture(card: Card): Texture {
       ctx.drawImage(img, area.x + (area.w - w) / 2, area.y + (area.h - h) / 2, w, h);
       ctx.restore();
       strokeArtBorder();
-      tex.needsUpdate = true;
+      onRepaint?.(canvas);
     };
     img.src = customUrl;
   }
-  return tex;
+  return canvas;
 }
 
 /** Card id → URL of a custom image in src/assets/cards/, resolved at build time. */
@@ -396,6 +416,30 @@ export function packTexture(): Texture {
 
   packTex = toTexture(canvas);
   return packTex;
+}
+
+let newBadgeTex: Texture | undefined;
+
+/** Pink "NEW!" pill marking a New Card. */
+export function newBadgeTexture(): Texture {
+  if (newBadgeTex) return newBadgeTex;
+  const [canvas, ctx] = makeCanvas(256, 104);
+  roundRect(ctx, 6, 6, 244, 92, 46);
+  const g = ctx.createLinearGradient(0, 6, 0, 98);
+  g.addColorStop(0, '#ff8ac0');
+  g.addColorStop(1, '#ff3d8a');
+  ctx.fillStyle = g;
+  ctx.fill();
+  ctx.lineWidth = 6;
+  ctx.strokeStyle = '#ffffff';
+  ctx.stroke();
+  ctx.fillStyle = '#ffffff';
+  ctx.font = `900 58px ${FONT}`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('NEW!', 128, 56);
+  newBadgeTex = toTexture(canvas);
+  return newBadgeTex;
 }
 
 let glowTex: Texture | undefined;

@@ -1,3 +1,4 @@
+import { AlbumStore } from './albumStore';
 import { Sfx } from './audio/sfx';
 import { Director } from './director';
 import { Input } from './input';
@@ -13,4 +14,4 @@ const sfx = new Sfx();
 const showDev = import.meta.env.DEV || new URLSearchParams(location.search).has('dev');
 const overlay = new Overlay(uiRoot, sfx.muted, showDev);
 
-new Director(stage, input, overlay, sfx);
+new Director(stage, input, overlay, sfx, new AlbumStore());

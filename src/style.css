@@ -330,6 +330,181 @@ body {
   border-color: rgba(255, 95, 162, 0.7);
 }
 
+/* ---------- album ---------- */
+
+.album {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  padding: max(3vh, 16px) 16px 0;
+  background: rgba(7, 6, 13, 0.96);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  pointer-events: auto;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s ease, visibility 0.3s;
+}
+
+.album.visible {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* Hidden (not just transparent) so its buttons can't catch taps meant for the 3D card. */
+.album.peek {
+  opacity: 0;
+  visibility: hidden;
+}
+
+.album-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 40px;
+}
+
+.album-head h2 {
+  margin: 0;
+  font-size: 22px;
+  letter-spacing: 0.3em;
+}
+
+.album-tabs,
+.album-filters {
+  display: flex;
+  gap: 8px;
+  margin-top: 14px;
+  flex-wrap: wrap;
+}
+
+.album-tabs button,
+.album-filters button {
+  padding: 8px 16px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--panel);
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.album-filters button {
+  padding: 5px 12px;
+  font-size: 12px;
+}
+
+.album-tabs button.active,
+.album-filters button.active {
+  color: #2a1700;
+  background: linear-gradient(180deg, #ffe08a, #e0a020);
+  border-color: transparent;
+}
+
+.album-tabs span {
+  margin-left: 4px;
+  font-weight: 400;
+  opacity: 0.8;
+}
+
+.album-grid {
+  flex: 1;
+  overflow-y: auto;
+  margin-top: 14px;
+  padding: 4px 2px 24px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
+  gap: 12px;
+  align-content: start;
+}
+
+.album-card {
+  position: relative;
+  aspect-ratio: 512 / 716;
+  padding: 0;
+  border: none;
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.04);
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+
+button.album-card:hover {
+  transform: translateY(-3px) scale(1.03);
+}
+
+.album-card canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+  border-radius: 9px;
+}
+
+.album-card.r-SSR canvas {
+  box-shadow: 0 0 14px rgba(255, 197, 61, 0.55);
+}
+
+.album-card.r-SR canvas {
+  box-shadow: 0 0 10px rgba(179, 92, 255, 0.45);
+}
+
+.album-count {
+  position: absolute;
+  right: 6px;
+  bottom: 6px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.75);
+  font-size: 12px;
+}
+
+.album-card.locked {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  cursor: default;
+  border: 3px solid;
+  background: #120e20;
+  color: rgba(255, 255, 255, 0.35);
+}
+
+.album-card.locked span {
+  font-size: 22px;
+  font-weight: 900;
+}
+
+.album-card.locked em {
+  font-style: normal;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.album-card.locked.r-N { border-color: rgba(223, 230, 240, 0.35); }
+.album-card.locked.r-R { border-color: rgba(61, 155, 255, 0.5); }
+.album-card.locked.r-SR { border-color: rgba(179, 92, 255, 0.55); }
+.album-card.locked.r-SSR { border-color: rgba(255, 197, 61, 0.6); }
+
+.album-empty {
+  grid-column: 1 / -1;
+  text-align: center;
+  color: var(--muted);
+  margin-top: 15vh;
+}
+
+.dev-clear {
+  margin-top: 4px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 90, 90, 0.6);
+  background: transparent;
+  color: #ff8a8a;
+  cursor: pointer;
+}
+
 /* ---------- toolbar + dev panel ---------- */
 
 .toolbar {

@@ -1,6 +1,9 @@
 import gsap from 'gsap';
 import { Color, Raycaster, Vector3, type Object3D } from 'three';
+import type { AlbumStore } from './albumStore';
 import type { Sfx } from './audio/sfx';
+import { generatedSlots, memeSlots } from './domain/album';
+import type { Card } from './domain/cards';
 import { createPull, type PullKind, type PullResult } from './domain/pull';
 import { rank, type Rarity } from './domain/rarity';
 import type { Input, Tap } from './input';
@@ -12,7 +15,7 @@ import { Particles, rainbow } from './scene/particles';
 import { BASE_BLOOM, type Stage } from './scene/stage';
 import type { Overlay, SummaryAction } from './ui/overlay';
 
-type Mode = 'idle' | 'tear' | 'advance' | 'summary';
+type Mode = 'idle' | 'tear' | 'advance' | 'summary' | 'album' | 'albumInspect';
 
 interface Slot {
   x: number;
@@ -74,12 +77,16 @@ export class Director {
   private ambient: Ambient | null = null;
   private inspecting: CardView | null = null;
   private autoTear?: () => void;
+  /** Card shown in 3D while inspecting from the Album. */
+  private albumCard: CardView | null = null;
+  private modeBeforeAlbum: Mode = 'idle';
 
   constructor(
     private stage: Stage,
     private input: Input,
     private overlay: Overlay,
     private sfx: Sfx,
+    private albumStore: AlbumStore,
   ) {
     const { scene } = stage;
     this.particles = new Particles(stage.renderer.getPixelRatio());
@@ -102,6 +109,13 @@ export class Director {
       this.advance.fire('skip');
     };
     overlay.onMute = (muted) => sfx.setMuted(muted);
+    overlay.onOpenAlbum = () => this.openAlbum();
+    overlay.album.onClose = () => this.closeAlbum();
+    overlay.album.onCard = (card) => this.inspectAlbumCard(card);
+    overlay.onClearAlbum = () => {
+      albumStore.clear();
+      if (this.mode === 'album') this.refreshAlbum();
+    };
     input.onTap = (tap) => this.onTap(tap);
 
     this.showHome();
@@ -123,9 +137,10 @@ export class Director {
         forceRarity: this.overlay.dev.forceSSR ? 'SSR' : undefined,
         forceFakeOut: this.overlay.dev.forceFakeOut,
       });
+      const newCopies = this.albumStore.record(result.copies);
       await this.presentPack(result);
       await this.tear(result);
-      await this.deal(result);
+      await this.deal(result, newCopies);
       await this.revealAll();
       next = await this.summary();
       await this.clearCards();
@@ -261,7 +276,7 @@ export class Director {
     this.ambient = null;
   }
 
-  private async deal(result: PullResult) {
+  private async deal(result: PullResult, newCopies: Set<number>) {
     const pack = this.pack!;
     const opening = pack.root.localToWorld(new Vector3(0, TEAR_Y, 0));
     const n = result.copies.length;
@@ -269,6 +284,7 @@ export class Director {
 
     this.cards = result.copies.map((copy) => {
       const card = new CardView(copy);
+      card.isNew = newCopies.has(copy.index);
       card.root.position.set(opening.x, opening.y - 0.8, -0.1);
       card.root.scale.setScalar(pack.root.scale.x * 0.85);
       this.stage.scene.add(card.root);
@@ -396,6 +412,7 @@ export class Director {
     const rarity = card.copy.card.rarity;
     const ssr = rarity === 'SSR';
     this.sfx.reveal(rarity);
+    if (card.isNew) card.showNewBadge();
     this.particles.burst(at, {
       count: BURST_COUNT[rarity],
       color: ssr ? () => (Math.random() < 0.5 ? color : rainbow()) : color,
@@ -462,6 +479,7 @@ export class Director {
   /** Reveal All: a non-SSR card flips on its way to its slot, without a Card Hint. */
   private quickToTray(card: CardView, slot: Slot) {
     this.sfx.flip();
+    if (card.isNew) card.showNewBadge();
     this.toTray(card, slot);
     gsap.to(card.flipper.rotation, { y: 0, duration: 0.45, ease: 'power2.inOut' });
     gsap.delayedCall(0.45, () =>
@@ -507,15 +525,12 @@ export class Director {
   private inspect(card: CardView) {
     this.inspecting = card;
     this.sfx.flip();
-    const z = SHOWCASE_Z + 0.5;
-    const view = this.stage.viewSize(z);
-    // Leave the lower part of the screen for the Trait list.
-    const scale = Math.min(1.2, (view.w * 0.8) / CARD_W, (view.h * 0.46) / CARD_H);
+    const pose = this.inspectPose();
     card.tiltAmount = 1;
     this.overlay.showTraits(card.copy.card);
     gsap.to(this.dimmer.material, { opacity: 0.75, duration: 0.4 });
-    gsap.to(card.root.position, { x: 0, y: view.h * 0.17, z, duration: 0.5, ease: 'power3.out' });
-    gsap.to(card.root.scale, { x: scale, y: scale, z: scale, duration: 0.5, ease: 'power3.out' });
+    gsap.to(card.root.position, { x: 0, y: pose.y, z: pose.z, duration: 0.5, ease: 'power3.out' });
+    gsap.to(card.root.scale, { x: pose.scale, y: pose.scale, z: pose.scale, duration: 0.5, ease: 'power3.out' });
   }
 
   private uninspect() {
@@ -527,6 +542,80 @@ export class Director {
     gsap.to(this.dimmer.material, { opacity: 0, duration: 0.4 });
     gsap.to(card.root.position, { x: s.x, y: s.y, z: 0, duration: 0.45, ease: 'power3.inOut' });
     gsap.to(card.root.scale, { x: s.scale, y: s.scale, z: s.scale, duration: 0.45, ease: 'power3.inOut' });
+  }
+
+  /** Where an inspected card sits: raised, leaving the lower screen for the Trait list. */
+  private inspectPose() {
+    const z = SHOWCASE_Z + 0.5;
+    const view = this.stage.viewSize(z);
+    return {
+      z,
+      y: view.h * 0.17,
+      scale: Math.min(1.2, (view.w * 0.8) / CARD_W, (view.h * 0.46) / CARD_H),
+    };
+  }
+
+  // ---------------------------------------------------------------- album
+
+  private openAlbum() {
+    if (this.mode === 'album' || this.mode === 'albumInspect') return;
+    this.sfx.unlock();
+    this.sfx.click();
+    if (this.inspecting) this.uninspect();
+    this.modeBeforeAlbum = this.mode;
+    this.mode = 'album';
+    this.overlay.showHome(false);
+    this.overlay.showSummary(false);
+    this.refreshAlbum();
+  }
+
+  private refreshAlbum() {
+    const album = this.albumStore.album;
+    this.overlay.album.show(memeSlots(album), generatedSlots(album));
+  }
+
+  private closeAlbum() {
+    this.sfx.click();
+    this.overlay.album.hide();
+    this.mode = this.modeBeforeAlbum;
+    // The Album is opened from the Summary mid-Pull, or from home otherwise.
+    if (this.busy) this.overlay.showSummary(true);
+    else this.overlay.showHome(true);
+  }
+
+  private inspectAlbumCard(card: Card) {
+    this.sfx.flip();
+    this.overlay.album.setPeek(true);
+    const view = new CardView({ index: -1, card });
+    view.flipper.rotation.y = 0;
+    view.tiltAmount = 1;
+    const pose = this.inspectPose();
+    view.root.position.set(0, pose.y - 1.5, pose.z);
+    view.root.scale.setScalar(0.001);
+    this.stage.scene.add(view.root);
+    gsap.to(view.root.position, { y: pose.y, duration: 0.5, ease: 'back.out(1.4)' });
+    gsap.to(view.root.scale, { x: pose.scale, y: pose.scale, z: pose.scale, duration: 0.5, ease: 'back.out(1.4)' });
+    gsap.to(this.dimmer.material, { opacity: 0.85, duration: 0.3 });
+    this.overlay.showTraits(card);
+    this.albumCard = view;
+    this.mode = 'albumInspect';
+  }
+
+  private closeAlbumInspect() {
+    const view = this.albumCard!;
+    this.albumCard = null;
+    this.mode = 'album';
+    this.overlay.showTraits(null);
+    gsap.to(this.dimmer.material, { opacity: 0, duration: 0.3 });
+    gsap.to(view.root.scale, {
+      x: 0.001,
+      y: 0.001,
+      z: 0.001,
+      duration: 0.25,
+      ease: 'back.in(2)',
+      onComplete: () => view.dispose(),
+    });
+    this.overlay.album.setPeek(false);
   }
 
   private async clearCards() {
@@ -543,7 +632,8 @@ export class Director {
   // ---------------------------------------------------------------- input
 
   private onTap(tap: Tap) {
-    if (this.mode === 'tear') this.autoTear?.();
+    if (this.mode === 'albumInspect') this.closeAlbumInspect();
+    else if (this.mode === 'tear') this.autoTear?.();
     else if (this.mode === 'advance') this.advance.fire('tap');
     else if (this.mode === 'summary') {
       if (this.inspecting) {
@@ -574,6 +664,7 @@ export class Director {
     this.dimmer.update();
     this.pack?.update(time);
     for (const card of this.cards) card.update(time, this.input.tilt);
+    this.albumCard?.update(time, this.input.tilt);
     this.emitAmbient(dt);
     this.particles.update(dt);
   }

@@ -50,6 +50,10 @@ _Avoid_: token id, seed (the seed is how it's implemented, not what the player s
 One visible attribute of a **Generated Cat**, such as fur, eyes, or headwear. Rare Trait values only appear on higher **Rarities**.
 _Avoid_: attribute, property, gene
 
+**Generator Version**:
+The version of the rules that turn a **Cat Number** into a look. A given number looks the same forever within one version.
+_Avoid_: seed version, schema
+
 **Meme Chance**:
 The probability (30%) that a single card draw yields a **Meme Cat** instead of a **Generated Cat**, after its **Rarity** is rolled.
 
@@ -72,6 +76,20 @@ _Avoid_: booster, box
 **Foil**:
 The holographic glare finish on a card's face, which reacts to the viewing angle. Only **SR** (light) and **SSR** (strong) cards have it.
 _Avoid_: holo, shiny
+
+### Collection
+
+**Album**:
+The record of every **Card** the player has gotten, kept in the player's own browser. Shows all **Meme Cats** (unowned ones as silhouettes) and only the **Generated Cats** the player owns.
+_Avoid_: collection, inventory, deck, binder
+
+**Album Entry**:
+One **Card** in the **Album**: how many **Copies** the player has, when the first one arrived, and (for a **Generated Cat**) its **Generator Version**.
+_Avoid_: owned card, slot
+
+**New Card**:
+The first **Copy** of a **Card** the **Album** didn't have before this **Pull**. It's marked "NEW!" when revealed.
+_Avoid_: first pull, unlock
 
 ### Animation
 

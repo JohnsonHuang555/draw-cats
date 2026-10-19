@@ -26,8 +26,8 @@ export const TRAIT_LABELS: Record<TraitKey, string> = {
 };
 
 /**
- * Append-only: Cat Numbers are generated from these lists, so reordering or removing values
- * changes existing cats (see ADR 0002).
+ * Frozen as Generator Version 1. Any edit here, even appending a value, changes how existing
+ * Cat Numbers look; new Traits need a new Generator Version (see ADR 0002).
  */
 export const TRAITS: Record<TraitKey, TraitValue[]> = {
   fur: [

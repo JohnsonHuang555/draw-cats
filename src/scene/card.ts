@@ -12,13 +12,14 @@ import {
 } from 'three';
 import type { Copy } from '../domain/pull';
 import { FOIL_STRENGTH, rarityColor } from './palette';
-import { cardBackTexture, cardFrontTexture, glowTexture } from './textures';
+import { cardBackTexture, cardFrontTexture, glowTexture, newBadgeTexture } from './textures';
 
 export const CARD_W = 2.2;
 export const CARD_H = CARD_W * (716 / 512);
 
 const geometry = new PlaneGeometry(CARD_W, CARD_H);
 let backMaterial: MeshBasicMaterial | undefined;
+let newBadgeMaterial: SpriteMaterial | undefined;
 
 const vertexShader = /* glsl */ `
   varying vec2 vUv;
@@ -110,6 +111,9 @@ export class CardView {
   };
   /** How strongly viewer tilt affects this card: 0 none, 1 full (Showcase / inspect). */
   tiltAmount = 0.2;
+  private newBadge?: Sprite;
+  /** This Copy is a New Card; its badge appears once revealed. */
+  isNew = false;
 
   constructor(readonly copy: Copy) {
     const rarity = copy.card.rarity;
@@ -147,6 +151,17 @@ export class CardView {
     this.flipper.rotation.y = Math.PI;
     this.tilter.add(this.aura, this.flipper);
     this.root.add(this.tilter);
+  }
+
+  /** Pins a "NEW!" badge to the card's corner: this Copy is a New Card. */
+  showNewBadge() {
+    if (this.newBadge) return;
+    // Slightly dimmed so the white outline doesn't bloom.
+    newBadgeMaterial ??= new SpriteMaterial({ map: newBadgeTexture(), color: new Color(0.85, 0.85, 0.85), depthWrite: false, transparent: true });
+    this.newBadge = new Sprite(newBadgeMaterial);
+    this.newBadge.scale.set(1.1, 0.44, 1);
+    this.newBadge.position.set(CARD_W * 0.36, CARD_H * 0.5, 0.08);
+    this.tilter.add(this.newBadge);
   }
 
   update(time: number, tilt: Vector2) {
