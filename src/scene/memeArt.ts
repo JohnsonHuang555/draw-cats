@@ -28,8 +28,6 @@ export const MEME_SPECS: Record<string, CatSpec> = {
     s: 0.8,
     dx: 45,
     dy: -78,
-    back: (ctx, _a, head) => spinArcs(ctx, head.x, head.y + 80, 200, 'rgba(255,255,255,0.8)'),
-    front: (ctx, a) => bigText(ctx, 'OIIA', a.x + a.w / 2, a.y + 44, 58, '#ffffff', 0),
   },
   'ssr-grumpy': {
     fur: '#efe4d2',
