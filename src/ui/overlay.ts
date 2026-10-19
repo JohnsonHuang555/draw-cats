@@ -1,0 +1,149 @@
+import gsap from 'gsap';
+import type { Card } from '../domain/cards';
+import type { PullKind } from '../domain/pull';
+import { RARITY_CSS } from '../scene/palette';
+
+export type SummaryAction = PullKind | 'home';
+
+export interface DevOptions {
+  forceSSR: boolean;
+  forceFakeOut: boolean;
+}
+
+function el<K extends keyof HTMLElementTagNameMap>(tag: K, className = '', html = ''): HTMLElementTagNameMap[K] {
+  const node = document.createElement(tag);
+  node.className = className;
+  node.innerHTML = html;
+  return node;
+}
+
+/** DOM layer above the canvas: home screen, prompts, SSR caption, Summary buttons, toolbar and dev panel. */
+export class Overlay {
+  readonly dev: DevOptions = { forceSSR: false, forceFakeOut: false };
+  onPull?: (kind: PullKind) => void;
+  onSummary?: (action: SummaryAction) => void;
+  onRevealAll?: () => void;
+  onMute?: (muted: boolean) => void;
+
+  private home = el('section', 'home panel');
+  private prompt = el('div', 'prompt');
+  private revealAll = el('button', 'reveal-all', '全部翻開 ≫');
+  private caption = el('div', 'caption');
+  private summary = el('section', 'summary panel');
+  private flashLayer = el('div', 'flash');
+  private muteBtn = el('button', 'icon-btn');
+  private reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  constructor(root: HTMLElement, muted: boolean, showDev: boolean) {
+    this.home.innerHTML = `
+      <header>
+        <h1 class="title">星辰抽卡</h1>
+        <p class="subtitle">撕開卡包，看看星星為你帶來了什麼</p>
+      </header>
+      <footer>
+        <div class="actions">
+          <button class="btn" data-pull="single">單抽</button>
+          <button class="btn btn-primary" data-pull="ten">十連抽</button>
+        </div>
+        <p class="rates">SSR 1.5% ・ SR 8.5% ・ R 30% ・ N 60%<br />十連抽必得 SR 以上</p>
+      </footer>
+    `;
+    this.home.querySelectorAll<HTMLButtonElement>('[data-pull]').forEach((b) =>
+      b.addEventListener('click', () => this.onPull?.(b.dataset.pull as PullKind)),
+    );
+
+    this.summary.innerHTML = `
+      <h2 class="summary-title">抽卡結果</h2>
+      <p class="summary-hint">點擊卡片查看</p>
+      <div class="actions summary-actions">
+        <button class="btn" data-action="home">返回</button>
+        <button class="btn" data-action="single">再抽一次</button>
+        <button class="btn btn-primary" data-action="ten">十連抽</button>
+      </div>
+    `;
+    this.summary.querySelectorAll<HTMLButtonElement>('[data-action]').forEach((b) =>
+      b.addEventListener('click', () => this.onSummary?.(b.dataset.action as SummaryAction)),
+    );
+
+    this.revealAll.addEventListener('click', () => this.onRevealAll?.());
+
+    const toolbar = el('div', 'toolbar');
+    this.setMuteIcon(muted);
+    this.muteBtn.setAttribute('aria-label', '靜音');
+    this.muteBtn.addEventListener('click', () => {
+      muted = !muted;
+      this.setMuteIcon(muted);
+      this.onMute?.(muted);
+    });
+    toolbar.append(this.muteBtn);
+
+    if (showDev) {
+      const devBtn = el('button', 'icon-btn', '⚙');
+      devBtn.setAttribute('aria-label', '開發者面板');
+      const panel = el('div', 'dev-panel');
+      panel.innerHTML = `
+        <strong>開發者面板</strong>
+        <label><input type="checkbox" data-dev="forceSSR" /> 強制 SSR</label>
+        <label><input type="checkbox" data-dev="forceFakeOut" /> 強制 Fake-out</label>
+      `;
+      panel.querySelectorAll<HTMLInputElement>('[data-dev]').forEach((input) =>
+        input.addEventListener('change', () => {
+          this.dev[input.dataset.dev as keyof DevOptions] = input.checked;
+        }),
+      );
+      devBtn.addEventListener('click', () => panel.classList.toggle('open'));
+      toolbar.append(devBtn, panel);
+    }
+
+    root.append(this.home, this.prompt, this.revealAll, this.caption, this.summary, toolbar, this.flashLayer);
+  }
+
+  showHome(visible: boolean) {
+    this.toggle(this.home, visible);
+  }
+
+  showSummary(visible: boolean) {
+    this.toggle(this.summary, visible);
+  }
+
+  showRevealAll(visible: boolean) {
+    this.toggle(this.revealAll, visible);
+  }
+
+  setPrompt(text: string | null) {
+    if (text) this.prompt.textContent = text;
+    this.toggle(this.prompt, !!text);
+  }
+
+  showCaption(card: Card | null) {
+    if (card) {
+      const color = RARITY_CSS[card.rarity];
+      this.caption.innerHTML = `
+        <span class="caption-rarity" style="--c:${color}">${card.rarity}</span>
+        <span class="caption-name">${card.name}</span>
+        <span class="caption-title">${card.title}</span>
+      `;
+      gsap.fromTo(
+        this.caption.children,
+        { opacity: 0, y: 24, filter: 'blur(6px)' },
+        { opacity: 1, y: 0, filter: 'blur(0px)', duration: 0.6, stagger: 0.12, ease: 'power3.out' },
+      );
+    }
+    this.toggle(this.caption, !!card);
+  }
+
+  /** Full-screen colour flash. Softer when the viewer prefers reduced motion. */
+  flash(color: string, intensity: number, duration = 0.6) {
+    const peak = this.reducedMotion ? Math.min(intensity, 0.15) : intensity;
+    this.flashLayer.style.background = color;
+    gsap.fromTo(this.flashLayer, { opacity: peak }, { opacity: 0, duration, ease: 'power2.out' });
+  }
+
+  private setMuteIcon(muted: boolean) {
+    this.muteBtn.textContent = muted ? '🔇' : '🔊';
+  }
+
+  private toggle(node: HTMLElement, visible: boolean) {
+    node.classList.toggle('visible', visible);
+  }
+}
