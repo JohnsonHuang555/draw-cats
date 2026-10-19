@@ -1,8 +1,10 @@
 import gsap from 'gsap';
 import { AmbientLight, Color, DirectionalLight, Raycaster, Vector3, type Object3D } from 'three';
 import type { AlbumStore } from './albumStore';
+import type { WalletStore } from './walletStore';
 import type { Sfx } from './audio/sfx';
 import { generatedSlots, memeSlots } from './domain/album';
+import { STARTER_GIFT, duplicateRefund } from './domain/economy';
 import type { Card } from './domain/cards';
 import { createPull, type PullKind, type PullResult } from './domain/pull';
 import { rank, type Rarity } from './domain/rarity';
@@ -87,6 +89,7 @@ export class Director {
     private overlay: Overlay,
     private sfx: Sfx,
     private albumStore: AlbumStore,
+    private walletStore: WalletStore,
   ) {
     const { scene } = stage;
     this.particles = new Particles(stage.renderer.getPixelRatio());
@@ -120,37 +123,83 @@ export class Director {
       albumStore.clear();
       if (this.mode === 'album') this.refreshAlbum();
     };
+    overlay.onAddFish = () => {
+      walletStore.earn(10000);
+      this.refreshWallet();
+      overlay.toast('+10000 🐟（開發者）');
+    };
     input.onTap = (tap) => this.onTap(tap);
 
     this.showHome();
+    this.greet();
   }
 
   // ---------------------------------------------------------------- flow
 
   private async run(kind: PullKind) {
     if (this.busy) return;
-    this.busy = true;
     this.sfx.unlock();
+    if (!this.walletStore.canAfford(kind)) {
+      this.notEnoughFish();
+      return;
+    }
+    this.busy = true;
     this.sfx.click();
     void this.input.requestMotionPermission();
     this.overlay.showHome(false);
+    this.overlay.showWallet(false);
 
     let next: SummaryAction = kind;
     while (next !== 'home') {
+      this.walletStore.spend(next);
       const result = createPull(next, {
         forceRarity: this.overlay.dev.forceSSR ? 'SSR' : undefined,
         forceFakeOut: this.overlay.dev.forceFakeOut,
+        pity: this.walletStore.wallet.pity,
       });
+      this.walletStore.setPity(result.pity);
       const newCopies = this.albumStore.record(result.copies);
+      const refund = duplicateRefund(result.copies, newCopies);
+      this.walletStore.earn(refund);
+      this.refreshWallet();
+
       await this.presentPack(result);
       await this.tear(result);
       await this.deal(result, newCopies);
       await this.revealAll();
+      this.overlay.setRefund(refund);
       next = await this.summary();
+      // Stay on the Summary until the player picks something they can afford.
+      while (next !== 'home' && !this.walletStore.canAfford(next)) {
+        this.notEnoughFish();
+        next = await this.summary();
+      }
+      this.overlay.showWallet(false);
       await this.clearCards();
     }
     this.showHome();
     this.busy = false;
+  }
+
+  private refreshWallet() {
+    const { fish, pity } = this.walletStore.wallet;
+    this.overlay.setWallet(fish, pity);
+  }
+
+  private notEnoughFish() {
+    this.sfx.click();
+    this.overlay.toast('小魚乾不足！明天再來領每日小魚乾 🐟');
+  }
+
+  /** Starter Gift on the first visit, then the Daily Gift once per local day. */
+  private greet() {
+    const daily = this.walletStore.claimDaily();
+    if (this.walletStore.isNew) {
+      this.overlay.toast(`新手禮包 +${STARTER_GIFT} 🐟 ・ 每日小魚乾 +${daily} 🐟`);
+    } else if (daily > 0) {
+      this.overlay.toast(`每日小魚乾 +${daily} 🐟`);
+    }
+    this.refreshWallet();
   }
 
   private showHome() {
@@ -159,6 +208,7 @@ export class Director {
     gsap.to(pack.color, { r: HOME_PACK_COLOR.r, g: HOME_PACK_COLOR.g, b: HOME_PACK_COLOR.b, duration: 0.5 });
     gsap.to(pack, { glowStrength: 0.3, duration: 0.5 });
     this.overlay.showHome(true);
+    this.overlay.showWallet(true);
   }
 
   private async presentPack(result: PullResult) {
@@ -503,6 +553,8 @@ export class Director {
       gsap.to(card.uniforms.brightness, { value: 1, duration: 0.5 });
     });
     this.overlay.showSummary(true);
+    this.refreshWallet();
+    this.overlay.showWallet(true);
     this.mode = 'summary';
 
     const action = await new Promise<SummaryAction>((resolve) => {
@@ -570,6 +622,7 @@ export class Director {
     this.mode = 'album';
     this.overlay.showHome(false);
     this.overlay.showSummary(false);
+    this.overlay.showWallet(false);
     this.refreshAlbum();
   }
 
@@ -581,6 +634,7 @@ export class Director {
   private closeAlbum() {
     this.sfx.click();
     this.overlay.album.hide();
+    this.overlay.showWallet(true);
     this.mode = this.modeBeforeAlbum;
     // The Album is opened from the Summary mid-Pull, or from home otherwise.
     if (this.busy) this.overlay.showSummary(true);

@@ -26,7 +26,14 @@ _Avoid_: odds, drop rate
 
 **Ten-Pull Guarantee**:
 The rule that a **Ten-Pull** includes at least one card of **SR** or higher.
-_Avoid_: pity (pity is a separate concept that spans multiple **Pulls**; it is not in scope yet)
+_Avoid_: pity (that is **Pity**, which spans multiple **Pulls**)
+
+**Pity**:
+The rule that an **SSR** is guaranteed within 90 card draws. The **Pity Counter** counts draws since the last SSR, across **Pulls**.
+_Avoid_: guarantee (that is the **Ten-Pull Guarantee**), spark
+
+**Pity Counter**:
+How many card draws have passed since the player's last **SSR**. Resets to 0 when an SSR is drawn.
 
 ### Cards & rarity
 
@@ -76,6 +83,26 @@ _Avoid_: booster, box
 **Foil**:
 The holographic glare finish on a card's face, which reacts to the viewing angle. Only **SR** (light) and **SSR** (strong) cards have it.
 _Avoid_: holo, shiny
+
+### Economy
+
+**Fish**:
+The currency spent on **Pulls**, shown to players as 「小魚乾」 🐟.
+_Avoid_: coins, gems, money, currency
+
+**Pull Cost**:
+The **Fish** a **Pull** costs: 100 for a **Single Pull**, 900 for a **Ten-Pull**.
+
+**Starter Gift**:
+The **Fish** a new player receives the first time they open the game.
+
+**Daily Gift**:
+The **Fish** a player receives the first time they open the game on a given (local) day.
+_Avoid_: login bonus, check-in
+
+**Duplicate Refund**:
+**Fish** returned for each **Copy** of a **Card** the **Album** already had, by **Rarity**.
+_Avoid_: dust, salvage
 
 ### Collection
 

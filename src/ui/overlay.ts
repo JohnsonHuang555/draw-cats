@@ -1,7 +1,8 @@
 import gsap from 'gsap';
 import type { Card } from '../domain/cards';
 import { traitShare } from '../domain/generated';
-import type { PullKind } from '../domain/pull';
+import { PULL_COST } from '../domain/economy';
+import { PITY_LIMIT, type PullKind } from '../domain/pull';
 import { TRAIT_KEYS, TRAIT_LABELS, traitValue } from '../domain/traits';
 import { RARITY_CSS } from '../scene/palette';
 import { AlbumView } from './albumView';
@@ -13,7 +14,11 @@ export interface DevOptions {
   forceFakeOut: boolean;
 }
 
-function el<K extends keyof HTMLElementTagNameMap>(tag: K, className = '', html = ''): HTMLElementTagNameMap[K] {
+function el<K extends keyof HTMLElementTagNameMap>(
+  tag: K,
+  className = '',
+  html = '',
+): HTMLElementTagNameMap[K] {
   const node = document.createElement(tag);
   node.className = className;
   node.innerHTML = html;
@@ -29,6 +34,7 @@ export class Overlay {
   onMute?: (muted: boolean) => void;
   onOpenAlbum?: () => void;
   onClearAlbum?: () => void;
+  onAddFish?: () => void;
   readonly album = new AlbumView();
 
   private home = el('section', 'home panel');
@@ -38,46 +44,71 @@ export class Overlay {
   private traits = el('ul', 'traits');
   private summary = el('section', 'summary panel');
   private flashLayer = el('div', 'flash');
+  private wallet = el('div', 'wallet');
+  private toastEl = el('div', 'toast');
   private muteBtn = el('button', 'icon-btn');
-  private reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  private reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)')
+    .matches;
 
   constructor(root: HTMLElement, muted: boolean, showDev: boolean) {
     this.home.innerHTML = `
       <header>
         <h1 class="title">喵喵抽卡</h1>
-        <p class="subtitle">撕開卡包，看看哪隻迷因貓來找你</p>
+        <p class="subtitle">撕開卡包，蒐集你的貓貓</p>
       </header>
       <footer>
         <div class="actions">
           <button class="btn" data-open-album>卡冊</button>
-          <button class="btn" data-pull="single">單抽</button>
-          <button class="btn btn-primary" data-pull="ten">十連抽</button>
+          <button class="btn" data-pull="single">
+            單抽<small>🐟${PULL_COST.single}</small>
+          </button>
+          <button class="btn btn-primary" data-pull="ten">
+            十連抽<small>🐟${PULL_COST.ten}</small>
+          </button>
         </div>
-        <p class="rates">SSR 1.5% ・ SR 8.5% ・ R 30% ・ N 60%<br />十連抽必得 SR 以上</p>
+        <p class="rates">
+          SSR 1.5% ・ SR 8.5% ・ R 30% ・ N 60%<br />
+          十連抽必得 SR 以上 ・ ${PITY_LIMIT} 抽內必得 SSR
+        </p>
       </footer>
     `;
-    this.home.querySelectorAll<HTMLButtonElement>('[data-pull]').forEach((b) =>
-      b.addEventListener('click', () => this.onPull?.(b.dataset.pull as PullKind)),
-    );
+    this.home
+      .querySelectorAll<HTMLButtonElement>('[data-pull]')
+      .forEach((b) =>
+        b.addEventListener('click', () =>
+          this.onPull?.(b.dataset.pull as PullKind),
+        ),
+      );
 
     this.summary.innerHTML = `
       <h2 class="summary-title">抽卡結果</h2>
       <p class="summary-hint">點擊卡片查看</p>
+      <p class="summary-refund"></p>
       <div class="actions summary-actions">
         <button class="btn" data-action="home">返回</button>
         <button class="btn" data-open-album>卡冊</button>
-        <button class="btn" data-action="single">再抽一次</button>
-        <button class="btn btn-primary" data-action="ten">十連抽</button>
+        <button class="btn" data-action="single">
+          再抽一次<small>🐟${PULL_COST.single}</small>
+        </button>
+        <button class="btn btn-primary" data-action="ten">
+          十連抽<small>🐟${PULL_COST.ten}</small>
+        </button>
       </div>
     `;
-    this.summary.querySelectorAll<HTMLButtonElement>('[data-action]').forEach((b) =>
-      b.addEventListener('click', () => this.onSummary?.(b.dataset.action as SummaryAction)),
-    );
+    this.summary
+      .querySelectorAll<HTMLButtonElement>('[data-action]')
+      .forEach((b) =>
+        b.addEventListener('click', () =>
+          this.onSummary?.(b.dataset.action as SummaryAction),
+        ),
+      );
 
     [this.home, this.summary].forEach((panel) =>
-      panel.querySelectorAll<HTMLButtonElement>('[data-open-album]').forEach((b) =>
-        b.addEventListener('click', () => this.onOpenAlbum?.()),
-      ),
+      panel
+        .querySelectorAll<HTMLButtonElement>('[data-open-album]')
+        .forEach((b) =>
+          b.addEventListener('click', () => this.onOpenAlbum?.()),
+        ),
     );
 
     this.revealAll.addEventListener('click', () => this.onRevealAll?.());
@@ -100,8 +131,12 @@ export class Overlay {
         <strong>開發者面板</strong>
         <label><input type="checkbox" data-dev="forceSSR" /> 強制 SSR</label>
         <label><input type="checkbox" data-dev="forceFakeOut" /> 強制 Fake-out</label>
+        <button class="dev-fish">+10000 小魚乾</button>
         <button class="dev-clear">清空卡冊</button>
       `;
+      panel
+        .querySelector('.dev-fish')!
+        .addEventListener('click', () => this.onAddFish?.());
       panel.querySelector('.dev-clear')!.addEventListener('click', () => {
         if (window.confirm('確定要清空卡冊嗎？')) this.onClearAlbum?.();
       });
@@ -114,7 +149,49 @@ export class Overlay {
       toolbar.append(devBtn, panel);
     }
 
-    root.append(this.home, this.prompt, this.revealAll, this.caption, this.summary, this.album.el, this.traits, toolbar, this.flashLayer);
+    root.append(
+      this.home,
+      this.prompt,
+      this.revealAll,
+      this.caption,
+      this.summary,
+      this.album.el,
+      this.traits,
+      this.wallet,
+      toolbar,
+      this.toastEl,
+      this.flashLayer,
+    );
+  }
+
+  /** Fish balance and draws left until Pity. */
+  setWallet(fish: number, pity: number) {
+    this.wallet.innerHTML = `
+      <span class="wallet-fish">🐟 <b>${fish.toLocaleString()}</b></span>
+      <span class="wallet-pity">距離保底 <b>${PITY_LIMIT - pity}</b> 抽</span>
+    `;
+  }
+
+  showWallet(visible: boolean) {
+    this.toggle(this.wallet, visible);
+  }
+
+  /** Duplicate Refund line on the Summary; empty when nothing was refunded. */
+  setRefund(fish: number) {
+    const line = this.summary.querySelector<HTMLElement>('.summary-refund')!;
+    line.textContent = fish > 0 ? `重複卡退還 +${fish} 🐟` : '';
+  }
+
+  /** A short message that fades out on its own. */
+  toast(text: string) {
+    this.toastEl.textContent = text;
+    gsap.killTweensOf(this.toastEl);
+    gsap.fromTo(
+      this.toastEl,
+      { opacity: 0, y: -12, xPercent: -50 },
+      { opacity: 1, y: 0, xPercent: -50, duration: 0.3, ease: 'power2.out' },
+    );
+    gsap.to(this.toastEl, { opacity: 0, duration: 0.4, delay: 2.4 });
   }
 
   showHome(visible: boolean) {
@@ -159,7 +236,14 @@ export class Overlay {
       gsap.fromTo(
         this.caption.children,
         { opacity: 0, y: 24, filter: 'blur(6px)' },
-        { opacity: 1, y: 0, filter: 'blur(0px)', duration: 0.6, stagger: 0.12, ease: 'power3.out' },
+        {
+          opacity: 1,
+          y: 0,
+          filter: 'blur(0px)',
+          duration: 0.6,
+          stagger: 0.12,
+          ease: 'power3.out',
+        },
       );
     }
     this.toggle(this.caption, !!card);
@@ -169,7 +253,11 @@ export class Overlay {
   flash(color: string, intensity: number, duration = 0.6) {
     const peak = this.reducedMotion ? Math.min(intensity, 0.15) : intensity;
     this.flashLayer.style.background = color;
-    gsap.fromTo(this.flashLayer, { opacity: peak }, { opacity: 0, duration, ease: 'power2.out' });
+    gsap.fromTo(
+      this.flashLayer,
+      { opacity: peak },
+      { opacity: 0, duration, ease: 'power2.out' },
+    );
   }
 
   private setMuteIcon(muted: boolean) {
