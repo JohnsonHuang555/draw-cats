@@ -31,15 +31,34 @@ _Avoid_: pity (pity is a separate concept that spans multiple **Pulls**; it is n
 ### Cards & rarity
 
 **Card**:
-An entry in the **Card Pool**: one meme cat, with a unique name, catchphrase, art, and exactly one **Rarity**.
+An entry in the **Card Pool**, with exactly one **Rarity**. Every Card is either a **Meme Cat** or a **Generated Cat**.
 _Avoid_: character, unit, cat (as a game term)
+
+**Meme Cat**:
+A hand-designed **Card** based on a real internet meme cat, with a fixed name and catchphrase.
+_Avoid_: special card, named card
+
+**Generated Cat**:
+A **Card** identified by a **Cat Number**, whose look is derived entirely from that number. The same number always gives the same cat.
+_Avoid_: random cat, NFT, procedural cat
+
+**Cat Number**:
+The identity of a **Generated Cat**, from #0001 to #9999. Each number has a fixed **Rarity** and fixed **Traits**.
+_Avoid_: token id, seed (the seed is how it's implemented, not what the player sees)
+
+**Trait**:
+One visible attribute of a **Generated Cat**, such as fur, eyes, or headwear. Rare Trait values only appear on higher **Rarities**.
+_Avoid_: attribute, property, gene
+
+**Meme Chance**:
+The probability (30%) that a single card draw yields a **Meme Cat** instead of a **Generated Cat**, after its **Rarity** is rolled.
 
 **Copy**:
 One instance of a **Card** that the player gets from a **Pull**. The same **Card** can have multiple **Copies**.
 _Avoid_: duplicate, instance
 
 **Card Pool**:
-The set of all **Cards** that can be pulled. Within each **Rarity**, every **Card** has an equal chance.
+The set of all **Cards** that can be pulled: every **Meme Cat** plus every **Cat Number**. A draw rolls **Rarity** first, then **Meme Chance**, then picks a Card of that Rarity with equal chance.
 _Avoid_: banner, pool
 
 **Rarity**:

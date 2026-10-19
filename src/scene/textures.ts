@@ -1,7 +1,7 @@
 import { CanvasTexture, SRGBColorSpace, type Texture } from 'three';
 import type { Card } from '../domain/cards';
 import type { Rarity } from '../domain/rarity';
-import { drawCatArt } from './catArt';
+import { drawCardArt } from './catArt';
 
 const FONT = '"Noto Sans TC", "Microsoft JhengHei", "PingFang TC", sans-serif';
 export const CARD_TEX_W = 512;
@@ -19,6 +19,14 @@ function toTexture(canvas: HTMLCanvasElement, srgb = true): Texture {
   if (srgb) tex.colorSpace = SRGBColorSpace;
   tex.anisotropy = 4;
   return tex;
+}
+
+/** Shrinks the font until `text` fits in `maxWidth`. */
+function fitFont(ctx: CanvasRenderingContext2D, text: string, weight: number, size: number, maxWidth: number) {
+  do {
+    ctx.font = `${weight} ${size}px ${FONT}`;
+    size -= 2;
+  } while (ctx.measureText(text).width > maxWidth && size > 20);
 }
 
 function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
@@ -55,7 +63,6 @@ export function cardFrontTexture(card: Card): Texture {
   const W = CARD_TEX_W;
   const H = CARD_TEX_H;
   const [canvas, ctx] = makeCanvas(W, H);
-  const rand = seededRandom(card.id);
   const [frameA, frameB, frameC] = FRAME[card.rarity];
 
   // Frame
@@ -81,48 +88,8 @@ export function cardFrontTexture(card: Card): Texture {
   ctx.save();
   roundRect(ctx, artX, artY, artW, artH, 14);
   ctx.clip();
-  const sky = ctx.createLinearGradient(0, artY, 0, artY + artH);
-  sky.addColorStop(0, `hsl(${card.hue}, 65%, 22%)`);
-  sky.addColorStop(1, `hsl(${(card.hue + 40) % 360}, 75%, 48%)`);
-  ctx.fillStyle = sky;
-  ctx.fillRect(artX, artY, artW, artH);
-
-  // Sunburst behind the glyph
-  const cx = W / 2;
-  const cy = artY + artH * 0.48;
-  ctx.globalAlpha = 0.18;
-  ctx.fillStyle = `hsl(${(card.hue + 20) % 360}, 90%, 80%)`;
-  const rays = 14 + Math.floor(rand() * 10);
-  for (let i = 0; i < rays; i++) {
-    const a = (i / rays) * Math.PI * 2 + rand() * 0.1;
-    ctx.beginPath();
-    ctx.moveTo(cx, cy);
-    ctx.arc(cx, cy, 420, a, a + Math.PI / rays / 1.6);
-    ctx.closePath();
-    ctx.fill();
-  }
-  ctx.globalAlpha = 1;
-
-  // Floating orbs
-  for (let i = 0; i < 26; i++) {
-    const r = 3 + rand() * 18;
-    ctx.globalAlpha = 0.15 + rand() * 0.35;
-    ctx.fillStyle = `hsl(${(card.hue + rand() * 80) % 360}, 90%, 75%)`;
-    ctx.beginPath();
-    ctx.arc(artX + rand() * artW, artY + rand() * artH, r, 0, Math.PI * 2);
-    ctx.fill();
-  }
-  ctx.globalAlpha = 1;
-
-  // Soft halo behind the cat
-  const halo = ctx.createRadialGradient(cx, cy, 10, cx, cy, 220);
-  halo.addColorStop(0, 'rgba(255,255,255,0.35)');
-  halo.addColorStop(0.5, `hsla(${card.hue}, 100%, 75%, 0.15)`);
-  halo.addColorStop(1, 'rgba(0,0,0,0)');
-  ctx.fillStyle = halo;
-  ctx.fillRect(artX, artY, artW, artH);
   const area = { x: artX, y: artY, w: artW, h: artH };
-  drawCatArt(ctx, card.id, area);
+  drawCardArt(ctx, card, area);
   ctx.restore();
 
   const strokeArtBorder = () => {
@@ -142,6 +109,16 @@ export function cardFrontTexture(card: Card): Texture {
   badgeGrad.addColorStop(1, frameB);
   ctx.fillStyle = badgeGrad;
   ctx.fillText(card.rarity, 40, 52);
+  if (card.kind === 'meme') {
+    const x = 48 + ctx.measureText(card.rarity).width;
+    ctx.font = '900 20px ' + FONT;
+    roundRect(ctx, x, 38, 74, 28, 14);
+    ctx.fillStyle = '#ff5fa2';
+    ctx.fill();
+    ctx.fillStyle = '#ffffff';
+    ctx.textAlign = 'center';
+    ctx.fillText('MEME', x + 37, 53);
+  }
   ctx.textAlign = 'right';
   ctx.font = `34px ${FONT}`;
   ctx.fillStyle = frameB;
@@ -150,7 +127,7 @@ export function cardFrontTexture(card: Card): Texture {
   // Name banner
   ctx.textAlign = 'center';
   ctx.fillStyle = '#ffffff';
-  ctx.font = `700 52px ${FONT}`;
+  fitFont(ctx, card.name, 700, 52, W - 90);
   ctx.fillText(card.name, W / 2, 576);
   ctx.fillStyle = 'rgba(255,255,255,0.65)';
   ctx.font = `28px ${FONT}`;

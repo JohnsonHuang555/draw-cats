@@ -1,38 +1,61 @@
 import type { Rarity } from './rarity';
+import type { Traits } from './traits';
 
-export interface Card {
+interface CardBase {
   id: string;
   name: string;
-  /** The meme's catchphrase or origin, shown under the name. */
+  /** Catchphrase (Meme Cat) or Cat Number label (Generated Cat), shown under the name. */
   title: string;
   rarity: Rarity;
   /** Base hue (0-360) for the art background. */
   hue: number;
 }
 
-export const CARD_POOL: Card[] = [
-  { id: 'n-banana', name: '香蕉貓', title: '嗚嗚嗚嗚嗚', rarity: 'N', hue: 50 },
-  { id: 'n-crying', name: '哭哭貓', title: '眼眶泛淚的那一刻', rarity: 'N', hue: 210 },
-  { id: 'n-polite', name: '禮貌貓', title: '不好意思打擾了', rarity: 'N', hue: 330 },
-  { id: 'n-huh', name: '蛤貓', title: '蛤？', rarity: 'N', hue: 180 },
-  { id: 'n-bingus', name: '賓格斯', title: '沒毛也很可愛', rarity: 'N', hue: 15 },
-  { id: 'n-chipi', name: '奇比奇比貓', title: 'Chipi Chipi Chapa Chapa', rarity: 'N', hue: 290 },
-  { id: 'n-ceiling', name: '天花板貓', title: '一直在看著你', rarity: 'N', hue: 30 },
-  { id: 'n-shocked', name: '驚嚇貓', title: '嚇到毛都豎起來', rarity: 'N', hue: 120 },
-  { id: 'r-bongo', name: '拍桌貓', title: '什麼都能打成鼓', rarity: 'R', hue: 200 },
-  { id: 'r-pop', name: '啵啵貓', title: '啵！', rarity: 'R', hue: 340 },
-  { id: 'r-vibing', name: '點頭貓', title: '節奏感滿分', rarity: 'R', hue: 260 },
-  { id: 'r-longcat', name: '長貓', title: '長～～～～～貓', rarity: 'R', hue: 150 },
-  { id: 'r-maxwell', name: '麥克斯韋', title: '慢慢地轉圈圈', rarity: 'R', hue: 230 },
-  { id: 'r-happy', name: '哈皮貓', title: 'Happy Happy Happy～', rarity: 'R', hue: 45 },
-  { id: 'sr-keyboard', name: '鍵盤貓', title: '演奏完畢，請下台', rarity: 'SR', hue: 220 },
-  { id: 'sr-smudge', name: '沙拉貓', title: '我又沒吃你的沙拉', rarity: 'SR', hue: 100 },
-  { id: 'sr-oiia', name: '歐伊亞旋轉貓', title: 'OIIA OIIA 轉不停', rarity: 'SR', hue: 280 },
-  { id: 'sr-floppa', name: '大佛洛帕', title: '浴缸裡的大人物', rarity: 'SR', hue: 25 },
-  { id: 'ssr-nyan', name: '彩虹貓', title: '拖著彩虹飛越宇宙', rarity: 'SSR', hue: 235 },
-  { id: 'ssr-grumpy', name: '不爽貓', title: '我不要。', rarity: 'SSR', hue: 0 },
+export interface MemeCat extends CardBase {
+  kind: 'meme';
+}
+
+export interface GeneratedCat extends CardBase {
+  kind: 'generated';
+  number: number;
+  traits: Traits;
+}
+
+export type Card = MemeCat | GeneratedCat;
+
+const meme = (id: string, name: string, title: string, rarity: Rarity, hue: number): MemeCat => ({
+  kind: 'meme',
+  id,
+  name,
+  title,
+  rarity,
+  hue,
+});
+
+/** Ranked by fame: 2025 Meme of the Year and all-time icons at the top. */
+export const MEME_CATS: MemeCat[] = [
+  meme('ssr-oiia', 'OIIA 貓', 'OIIA OIIA 轉不停', 'SSR', 280),
+  meme('ssr-grumpy', '不爽貓', '我不要。', 'SSR', 0),
+  meme('sr-nyan', '彩虹貓', '拖著彩虹飛越宇宙', 'SR', 235),
+  meme('sr-chipi', 'Chipi Chipi 貓', 'Chipi Chipi Chapa Chapa', 'SR', 290),
+  meme('sr-happy', 'Happy 貓', 'Happy Happy Happy～', 'SR', 45),
+  meme('sr-pop', 'Pop 貓', '啵！', 'SR', 340),
+  meme('r-huh', 'Huh 貓', '蛤？', 'R', 180),
+  meme('r-maxwell', '臭貓', '慢慢地轉圈圈', 'R', 230),
+  meme('r-smudge', '沙拉貓', '我又沒吃你的沙拉', 'R', 100),
+  meme('r-keyboard', '鍵盤貓', '演奏完畢，請下台', 'R', 220),
+  meme('r-banana', '香蕉貓', '嗚嗚嗚嗚嗚', 'R', 50),
+  meme('r-vibing', '搖頭貓', '節奏感滿分', 'R', 260),
+  meme('n-polite', '有禮貌貓', '不好意思打擾了', 'N', 330),
+  meme('n-sad', '被罵悲傷貓', '我只是肚子餓…', 'N', 210),
+  meme('n-scream', '尖叫小貓', '啊啊啊啊啊！', 'N', 150),
+  meme('n-shocked', '震驚貓', '真的假的？', 'N', 120),
+  meme('n-zoning', '優雅貓', '正在放空中', 'N', 30),
+  meme('n-wajaja', '大笑貓', 'WAJAJAJA', 'N', 50),
+  meme('n-chips', '吃薯片貓', '這包是我的', 'N', 200),
+  meme('n-staring', '紅溫貓', '盯——', 'N', 15),
 ];
 
-export function cardsOf(rarity: Rarity): Card[] {
-  return CARD_POOL.filter((c) => c.rarity === rarity);
+export function memesOf(rarity: Rarity): MemeCat[] {
+  return MEME_CATS.filter((c) => c.rarity === rarity);
 }

@@ -509,10 +509,12 @@ export class Director {
     this.sfx.flip();
     const z = SHOWCASE_Z + 0.5;
     const view = this.stage.viewSize(z);
-    const scale = Math.min(1.3, (view.w * 0.85) / CARD_W, (view.h * 0.7) / CARD_H);
+    // Leave the lower part of the screen for the Trait list.
+    const scale = Math.min(1.2, (view.w * 0.8) / CARD_W, (view.h * 0.46) / CARD_H);
     card.tiltAmount = 1;
+    this.overlay.showTraits(card.copy.card);
     gsap.to(this.dimmer.material, { opacity: 0.75, duration: 0.4 });
-    gsap.to(card.root.position, { x: 0, y: 0, z, duration: 0.5, ease: 'power3.out' });
+    gsap.to(card.root.position, { x: 0, y: view.h * 0.17, z, duration: 0.5, ease: 'power3.out' });
     gsap.to(card.root.scale, { x: scale, y: scale, z: scale, duration: 0.5, ease: 'power3.out' });
   }
 
@@ -521,6 +523,7 @@ export class Director {
     this.inspecting = null;
     const s = this.slots[this.cards.indexOf(card)];
     card.tiltAmount = 0.2;
+    this.overlay.showTraits(null);
     gsap.to(this.dimmer.material, { opacity: 0, duration: 0.4 });
     gsap.to(card.root.position, { x: s.x, y: s.y, z: 0, duration: 0.45, ease: 'power3.inOut' });
     gsap.to(card.root.scale, { x: s.scale, y: s.scale, z: s.scale, duration: 0.45, ease: 'power3.inOut' });

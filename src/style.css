@@ -268,6 +268,68 @@ body {
   font-size: 15px;
 }
 
+/* ---------- traits (inspect) ---------- */
+
+.traits {
+  position: absolute;
+  left: 50%;
+  bottom: max(11vh, 76px);
+  transform: translateX(-50%);
+  width: min(560px, calc(100% - 32px));
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 6px;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s ease, visibility 0.3s;
+}
+
+.traits.visible {
+  opacity: 1;
+  visibility: visible;
+}
+
+.traits li {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: baseline;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: rgba(10, 8, 24, 0.75);
+  font-size: 13px;
+}
+
+.traits span {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.traits em {
+  font-style: normal;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.traits li.rare {
+  border-color: rgba(255, 197, 61, 0.7);
+  box-shadow: 0 0 12px rgba(255, 197, 61, 0.3);
+}
+
+.traits li.rare b {
+  color: var(--gold);
+}
+
+.traits li.meme {
+  grid-column: 1 / -1;
+  grid-template-columns: auto 1fr;
+  border-color: rgba(255, 95, 162, 0.7);
+}
+
 /* ---------- toolbar + dev panel ---------- */
 
 .toolbar {

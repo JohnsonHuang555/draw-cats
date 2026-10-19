@@ -1,6 +1,8 @@
 import gsap from 'gsap';
 import type { Card } from '../domain/cards';
+import { traitShare } from '../domain/generated';
 import type { PullKind } from '../domain/pull';
+import { TRAIT_KEYS, TRAIT_LABELS, traitValue } from '../domain/traits';
 import { RARITY_CSS } from '../scene/palette';
 
 export type SummaryAction = PullKind | 'home';
@@ -29,6 +31,7 @@ export class Overlay {
   private prompt = el('div', 'prompt');
   private revealAll = el('button', 'reveal-all', '全部翻開 ≫');
   private caption = el('div', 'caption');
+  private traits = el('ul', 'traits');
   private summary = el('section', 'summary panel');
   private flashLayer = el('div', 'flash');
   private muteBtn = el('button', 'icon-btn');
@@ -95,7 +98,7 @@ export class Overlay {
       toolbar.append(devBtn, panel);
     }
 
-    root.append(this.home, this.prompt, this.revealAll, this.caption, this.summary, toolbar, this.flashLayer);
+    root.append(this.home, this.prompt, this.revealAll, this.caption, this.summary, this.traits, toolbar, this.flashLayer);
   }
 
   showHome(visible: boolean) {
@@ -113,6 +116,20 @@ export class Overlay {
   setPrompt(text: string | null) {
     if (text) this.prompt.textContent = text;
     this.toggle(this.prompt, !!text);
+  }
+
+  /** NFT-style Trait list for an inspected card; a Meme Cat shows its catchphrase instead. */
+  showTraits(card: Card | null) {
+    if (card?.kind === 'generated') {
+      this.traits.innerHTML = TRAIT_KEYS.map((key) => {
+        const value = traitValue(key, card.traits[key]);
+        const share = traitShare(key, value.id) * 100;
+        return `<li class="${value.rare ? 'rare' : ''}"><span>${TRAIT_LABELS[key]}</span><b>${value.label}</b><em>${share < 1 ? share.toFixed(2) : share.toFixed(1)}%</em></li>`;
+      }).join('');
+    } else if (card) {
+      this.traits.innerHTML = `<li class="meme"><span>迷因貓</span><b>${card.title}</b></li>`;
+    }
+    this.toggle(this.traits, !!card);
   }
 
   showCaption(card: Card | null) {

@@ -1,5 +1,9 @@
-import { cardsOf, type Card } from './cards';
+import { memesOf, type Card } from './cards';
+import { generateCat, numbersOf } from './generated';
 import { FAKE_OUT_CHANCE, RARITIES, RATES, highest, rank, type Rarity } from './rarity';
+
+/** Chance that a draw, after its Rarity is rolled, yields a Meme Cat rather than a Generated Cat. */
+export const MEME_CHANCE = 0.3;
 
 export type PullKind = 'single' | 'ten';
 
@@ -44,7 +48,7 @@ export function createPull(kind: PullKind, options: PullOptions = {}): PullResul
   }
 
   const copies = rarities
-    .map((rarity) => pick(rng, cardsOf(rarity)))
+    .map((rarity) => drawCard(rng, rarity))
     .sort((a, b) => rank(a.rarity) - rank(b.rarity))
     .map((card, index) => ({ index, card }));
 
@@ -62,6 +66,11 @@ function rollRarity(rng: Rng, among: readonly Rarity[]): Rarity {
     if (roll < 0) return rarity;
   }
   return among[among.length - 1];
+}
+
+function drawCard(rng: Rng, rarity: Rarity): Card {
+  if (rng() < MEME_CHANCE) return pick(rng, memesOf(rarity));
+  return generateCat(pick(rng, numbersOf(rarity)));
 }
 
 function pick<T>(rng: Rng, items: T[]): T {
