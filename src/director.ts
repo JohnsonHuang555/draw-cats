@@ -1,5 +1,5 @@
 import gsap from 'gsap';
-import { Color, Raycaster, Vector3, type Object3D } from 'three';
+import { AmbientLight, Color, DirectionalLight, Raycaster, Vector3, type Object3D } from 'three';
 import type { AlbumStore } from './albumStore';
 import type { Sfx } from './audio/sfx';
 import { generatedSlots, memeSlots } from './domain/album';
@@ -94,6 +94,10 @@ export class Director {
     this.dimmer.mesh.position.z = 0.8;
     scene.add(this.backdrop.stars, this.backdrop.nebula, this.backdrop.nebula2);
     scene.add(this.dimmer.mesh, this.rays.mesh, this.particles.points);
+    // Only the Pack's foil is lit; cards and effects use unlit materials.
+    const key = new DirectionalLight(0xffffff, 1.9);
+    key.position.set(-4, 3, 5);
+    scene.add(new AmbientLight(0xffffff, 1.6), key);
 
     stage.add((dt, time) => this.update(dt, time));
     stage.onQualityDrop = () => {

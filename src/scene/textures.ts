@@ -418,6 +418,49 @@ export function packTexture(): Texture {
   return packTex;
 }
 
+let packBackTex: Texture | undefined;
+
+/** Back of the Pack: the same foil, with a paw-print pattern and a small barcode. */
+export function packBackTexture(): Texture {
+  if (packBackTex) return packBackTex;
+  const W = PACK_TEX_W;
+  const H = PACK_TEX_H;
+  const [canvas, ctx] = makeCanvas(W, H);
+  // Same crimped outline as the front, so the edges line up.
+  ctx.drawImage(packTexture().image as HTMLCanvasElement, 0, 0);
+  ctx.globalCompositeOperation = 'source-atop';
+  const g = ctx.createLinearGradient(W, 0, 0, H);
+  g.addColorStop(0, '#22185a');
+  g.addColorStop(0.5, '#0f0a2c');
+  g.addColorStop(1, '#2e2276');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, W, H);
+  ctx.fillStyle = 'rgba(255, 243, 196, 0.1)';
+  for (let y = 80; y < H - 40; y += 110) {
+    for (let x = (y / 110) % 2 ? 60 : 130; x < W; x += 140) {
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(((x + y) % 7) * 0.2 - 0.6);
+      drawPaw(ctx, 0, 0, 0.32);
+      ctx.restore();
+    }
+  }
+  ctx.fillStyle = 'rgba(255, 243, 196, 0.75)';
+  ctx.font = `700 26px ${FONT}`;
+  ctx.textAlign = 'center';
+  ctx.fillText('每包內含迷因貓與編號貓', W / 2, H * 0.62);
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(W / 2 - 90, H * 0.68, 180, 70);
+  ctx.fillStyle = '#111111';
+  for (let i = 0; i < 34; i++) {
+    const w = i % 3 === 0 ? 4 : 2;
+    ctx.fillRect(W / 2 - 80 + i * 4.7, H * 0.68 + 8, w, 48);
+  }
+  ctx.globalCompositeOperation = 'source-over';
+  packBackTex = toTexture(canvas);
+  return packBackTex;
+}
+
 let newBadgeTex: Texture | undefined;
 
 /** Pink "NEW!" pill marking a New Card. */
