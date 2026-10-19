@@ -28,7 +28,9 @@ export type Eyes =
   /** Rolled up: pupils hidden under the lids. */
   | 'up'
   /** Crossed, mismatched pupils. */
-  | 'derp';
+  | 'derp'
+  /** Eyes shut tight as one slanted line each (screaming, cackling). */
+  | 'slant';
 export type Mouth =
   | 'w'
   | 'frown'
@@ -79,7 +81,9 @@ export interface CatSpec {
   bigPupil?: boolean;
   /** Chest/belly colour when it differs from the face (e.g. black cat, white chest). */
   belly?: string;
-  /** Colour of the paw tips (quad pose). */
+  /** Stand pose: arms raised overhead instead of out to the sides. */
+  armsUp?: boolean;
+  /** Colour of the paw tips (quad and stand poses). */
   paws?: string;
   /** Skip the built-in cat entirely; `back`/`front` draw everything. */
   noCat?: boolean;
@@ -195,16 +199,22 @@ export function drawBody(ctx: CanvasRenderingContext2D, head: Head, spec: CatSpe
   const belly = spec.belly ?? (spec.tuxedo ? '#ffffff' : spec.muzzle);
 
   if (spec.pose === 'quad') {
-    // Standing on all fours, facing the viewer: rump behind, front legs straight down
+    // Standing on all fours in three-quarter view: body trailing off to the left behind the head,
+    // one hind leg showing, front legs straight down under the chin
     ctx.beginPath();
-    ctx.ellipse(-30, 70, 170, 105, -0.08, 0, Math.PI * 2);
+    ctx.moveTo(-40, 40);
+    ctx.bezierCurveTo(-120, 10, -230, 30, -235, 120);
+    ctx.bezierCurveTo(-238, 190, -160, 215, -60, 200);
+    ctx.lineTo(60, 190);
+    ctx.bezierCurveTo(90, 140, 70, 60, 40, 40);
+    ctx.closePath();
     ctx.fill();
     ctx.stroke();
     for (const [x, top, h] of [
-      [-150, 110, 120],
-      [80, 120, 110],
-      [-58, 70, 190],
-      [52, 70, 190],
+      [-190, 150, 125],
+      [-120, 165, 115],
+      [-44, 80, 200],
+      [44, 80, 200],
     ]) {
       ctx.fillStyle = furFill(ctx, spec);
       ctx.beginPath();
@@ -273,17 +283,9 @@ export function drawBody(ctx: CanvasRenderingContext2D, head: Head, spec: CatSpe
       ctx.fill();
     }
   } else if (spec.pose === 'stand') {
-    // Upright with arms flung out
+    // Upright, arms flung out to the sides (or raised overhead with armsUp)
     for (const side of [-1, 1]) {
       ctx.fillStyle = furFill(ctx, spec);
-      ctx.save();
-      ctx.translate(side * 80, 150);
-      ctx.rotate(side * -0.9);
-      ctx.beginPath();
-      ctx.roundRect(-26, -150, 52, 160, 26);
-      ctx.fill();
-      ctx.stroke();
-      ctx.restore();
       ctx.beginPath();
       ctx.roundRect(side * 50 - 28, 250, 56, 150, 28);
       ctx.fill();
@@ -299,6 +301,25 @@ export function drawBody(ctx: CanvasRenderingContext2D, head: Head, spec: CatSpe
       ctx.beginPath();
       ctx.ellipse(0, 200, 60, 100, 0, 0, Math.PI * 2);
       ctx.fill();
+    }
+    // Arms drawn over the body, rotated outward from the shoulders
+    for (const side of [-1, 1]) {
+      ctx.save();
+      ctx.translate(side * 82, 120);
+      ctx.rotate(side * (spec.armsUp ? 0.4 : 1.15));
+      ctx.fillStyle = furFill(ctx, spec);
+      ctx.strokeStyle = INK;
+      ctx.lineWidth = 6;
+      ctx.beginPath();
+      ctx.roundRect(-24, -160, 48, 175, 24);
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = spec.paws ?? furFill(ctx, spec);
+      ctx.beginPath();
+      ctx.ellipse(0, -156, 28, 24, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+      ctx.restore();
     }
   } else {
     ctx.beginPath();
@@ -505,6 +526,12 @@ export function drawEye(ctx: CanvasRenderingContext2D, x: number, y: number, sid
     case 'closed':
       ctx.beginPath();
       ctx.arc(x, y - 6, 17, Math.PI * 0.15, Math.PI * 0.85);
+      ctx.stroke();
+      return;
+    case 'slant':
+      ctx.beginPath();
+      ctx.moveTo(x - side * 20, y - 10);
+      ctx.lineTo(x + side * 18, y + 6);
       ctx.stroke();
       return;
     case 'squeeze':
