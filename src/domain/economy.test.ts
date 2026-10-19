@@ -9,6 +9,12 @@ import {
   localDay,
   newWallet,
   spend,
+  TAP_DAILY_CAP,
+  TapLimiter,
+  claimTap,
+  tappedToday,
+  upgradeWallet,
+  type Wallet,
 } from './economy';
 import { generateCat, numbersOf } from './generated';
 import { PITY_LIMIT, createPull, type Copy, type Rng } from './pull';
@@ -95,5 +101,36 @@ describe('Pity', () => {
       pity = result.pity;
     }
     expect(longest).toBeLessThan(PITY_LIMIT);
+  });
+});
+
+describe('Tap Fish', () => {
+  it('gives one Fish per tap and counts them for the day', () => {
+    const { wallet, granted } = claimTap(newWallet(), '2026-10-20');
+    expect(granted).toBe(1);
+    expect(wallet.fish).toBe(STARTER_GIFT + 1);
+    expect(tappedToday(wallet, '2026-10-20')).toBe(1);
+  });
+
+  it('stops at the daily cap and resets the next day', () => {
+    let w: Wallet = { ...newWallet(), tapDay: '2026-10-20', tapped: TAP_DAILY_CAP - 1 };
+    w = claimTap(w, '2026-10-20').wallet;
+    const capped = claimTap(w, '2026-10-20');
+    expect(capped.granted).toBe(0);
+    expect(capped.wallet.fish).toBe(w.fish);
+    expect(tappedToday(w, '2026-10-21')).toBe(0);
+    expect(claimTap(w, '2026-10-21').granted).toBe(1);
+  });
+
+  it('limits taps to a human rate within any one second', () => {
+    const limiter = new TapLimiter(12);
+    const allowed = Array.from({ length: 30 }, (_, i) => limiter.allow(i * 10)).filter(Boolean);
+    expect(allowed).toHaveLength(12);
+    expect(limiter.allow(1000)).toBe(true);
+  });
+
+  it('upgrades wallets saved before Tap Fish existed', () => {
+    const w = upgradeWallet({ fish: 42, lastDaily: '2026-10-19', pity: 3 });
+    expect(w).toEqual({ fish: 42, lastDaily: '2026-10-19', pity: 3, tapDay: null, tapped: 0 });
   });
 });

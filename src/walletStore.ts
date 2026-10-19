@@ -1,9 +1,12 @@
 import {
   canAfford,
   claimDaily,
+  claimTap,
   localDay,
   newWallet,
   spend,
+  tappedToday,
+  upgradeWallet,
   type Wallet,
 } from './domain/economy';
 import type { PullKind } from './domain/pull';
@@ -37,6 +40,20 @@ export class WalletStore {
     this.wallet = wallet;
     this.save();
     return granted;
+  }
+
+  /** One Tap Fish if today's cap allows; returns the Fish granted (0 or 1). */
+  claimTap(now = new Date()): number {
+    const { wallet, granted } = claimTap(this.wallet, localDay(now));
+    if (granted) {
+      this.wallet = wallet;
+      this.save();
+    }
+    return granted;
+  }
+
+  tappedToday(now = new Date()): number {
+    return tappedToday(this.wallet, localDay(now));
   }
 
   canAfford(kind: PullKind): boolean {
@@ -74,7 +91,7 @@ function load(): Wallet | null {
     const raw = localStorage.getItem(KEY);
     if (!raw) return null;
     const file = JSON.parse(raw) as SaveFile;
-    return file.version === 1 && file.wallet ? file.wallet : null;
+    return file.version === 1 && file.wallet ? upgradeWallet(file.wallet) : null;
   } catch {
     return null;
   }

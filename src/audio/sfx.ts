@@ -42,6 +42,11 @@ export class Sfx {
     if (this.master && this.ctx) this.master.gain.setTargetAtTime(muted ? 0 : 0.6, this.ctx.currentTime, 0.02);
   }
 
+  /** Tiny "plip" for a Tap Fish; pitch varies so rapid taps don't drone. */
+  plip() {
+    this.tone(1200 + Math.random() * 500, 0.07, { type: 'sine', gain: 0.08 });
+  }
+
   click() {
     this.tone(880, 0.06, { type: 'triangle', gain: 0.15 });
   }

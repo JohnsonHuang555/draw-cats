@@ -3,6 +3,11 @@ import { Vector2 } from 'three';
 export interface Tap {
   /** Normalised device coordinates (-1..1, y up). */
   ndc: Vector2;
+  /** Screen position in CSS pixels. */
+  x: number;
+  y: number;
+  /** False for events synthesised by scripts (dispatchEvent / click()). */
+  trusted: boolean;
 }
 
 export interface DragHandler {
@@ -54,7 +59,11 @@ export class Input {
   private onDown(e: PointerEvent) {
     if (this.down) return;
     this.down = { x: e.clientX, y: e.clientY, id: e.pointerId };
-    this.el.setPointerCapture(e.pointerId);
+    try {
+      this.el.setPointerCapture(e.pointerId);
+    } catch {
+      // Script-made events carry pointer ids the browser doesn't know; nothing to capture.
+    }
     this.pointerTilt(e);
   }
 
@@ -73,7 +82,7 @@ export class Input {
     this.drag?.end(dx, dy);
     if (Math.hypot(dx, dy) < TAP_SLOP) {
       const ndc = new Vector2((e.clientX / window.innerWidth) * 2 - 1, -(e.clientY / window.innerHeight) * 2 + 1);
-      this.onTap?.({ ndc });
+      this.onTap?.({ ndc, x: e.clientX, y: e.clientY, trusted: e.isTrusted });
     }
     if (e.pointerType !== 'mouse' && !this.hasOrientation()) this.targetTilt.set(0, 0);
   }

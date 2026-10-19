@@ -100,6 +100,10 @@ The **Fish** a new player receives the first time they open the game.
 The **Fish** a player receives the first time they open the game on a given (local) day.
 _Avoid_: login bonus, check-in
 
+**Tap Fish**:
+One **Fish** earned by tapping the **Pack** on the home screen, up to 500 per local day. Taps faster than a person can make, or made by scripts, earn nothing.
+_Avoid_: clicker, idle income
+
 **Duplicate Refund**:
 **Fish** returned for each **Copy** of a **Card** the **Album** already had, by **Rarity**.
 _Avoid_: dust, salvage

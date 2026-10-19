@@ -1,7 +1,7 @@
 import gsap from 'gsap';
 import type { Card } from '../domain/cards';
 import { traitShare } from '../domain/generated';
-import { PULL_COST } from '../domain/economy';
+import { PULL_COST, TAP_DAILY_CAP } from '../domain/economy';
 import { PITY_LIMIT, type PullKind } from '../domain/pull';
 import { TRAIT_KEYS, TRAIT_LABELS, traitValue } from '../domain/traits';
 import { RARITY_CSS } from '../scene/palette';
@@ -55,6 +55,7 @@ export class Overlay {
       <header>
         <h1 class="title">喵喵抽卡</h1>
         <p class="subtitle">撕開卡包，蒐集你的貓貓</p>
+        <p class="tap-hint">點卡包可以賺小魚乾 🐟</p>
       </header>
       <footer>
         <div class="actions">
@@ -165,11 +166,32 @@ export class Overlay {
   }
 
   /** Fish balance and draws left until Pity. */
-  setWallet(fish: number, pity: number) {
+  setWallet(fish: number, pity: number, tapped: number) {
     this.wallet.innerHTML = `
       <span class="wallet-fish">🐟 <b>${fish.toLocaleString()}</b></span>
       <span class="wallet-pity">距離保底 <b>${PITY_LIMIT - pity}</b> 抽</span>
+      <span class="wallet-tap">今日點擊 <b>${tapped}</b>/${TAP_DAILY_CAP}</span>
     `;
+  }
+
+  /** "+1 🐟" rising from a screen point. */
+  floatText(x: number, y: number, text: string) {
+    const node = el('div', 'float-text', text);
+    node.style.left = `${x}px`;
+    node.style.top = `${y}px`;
+    this.toastEl.parentElement?.append(node);
+    gsap.fromTo(
+      node,
+      { opacity: 1, y: 0, xPercent: -50, scale: 0.8 },
+      {
+        opacity: 0,
+        y: -70,
+        scale: 1.1,
+        duration: 0.8,
+        ease: 'power2.out',
+        onComplete: () => node.remove(),
+      },
+    );
   }
 
   showWallet(visible: boolean) {

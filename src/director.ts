@@ -4,7 +4,7 @@ import type { AlbumStore } from './albumStore';
 import type { WalletStore } from './walletStore';
 import type { Sfx } from './audio/sfx';
 import { generatedSlots, memeSlots } from './domain/album';
-import { STARTER_GIFT, duplicateRefund } from './domain/economy';
+import { STARTER_GIFT, TAP_DAILY_CAP, TapLimiter, duplicateRefund } from './domain/economy';
 import type { Card } from './domain/cards';
 import { createPull, type PullKind, type PullResult } from './domain/pull';
 import { rank, type Rarity } from './domain/rarity';
@@ -81,6 +81,8 @@ export class Director {
   private autoTear?: () => void;
   /** Card shown in 3D while inspecting from the Album. */
   private albumCard: CardView | null = null;
+  private readonly tapLimiter = new TapLimiter();
+  private tapCapNoticed = false;
   private modeBeforeAlbum: Mode = 'idle';
 
   constructor(
@@ -183,7 +185,41 @@ export class Director {
 
   private refreshWallet() {
     const { fish, pity } = this.walletStore.wallet;
-    this.overlay.setWallet(fish, pity);
+    this.overlay.setWallet(fish, pity, this.walletStore.tappedToday());
+  }
+
+  /**
+   * Tap Fish: tapping the Pack on the home screen earns one Fish. Script-made events are ignored,
+   * taps beyond a human rate don't count, and earnings stop at the daily cap.
+   */
+  private tapPack(tap: Tap) {
+    const pack = this.pack;
+    if (!pack || !tap.trusted) return;
+    this.raycaster.setFromCamera(tap.ndc, this.stage.camera);
+    if (this.raycaster.intersectObjects([pack.body, pack.top], true).length === 0) return;
+
+    // Squish feedback even when nothing is earned, so the pack never feels dead.
+    gsap.killTweensOf(pack.floater.scale);
+    gsap.fromTo(pack.floater.scale, { x: 1.06, y: 0.94 }, { x: 1, y: 1, duration: 0.35, ease: 'elastic.out(1, 0.4)' });
+    if (!this.tapLimiter.allow(performance.now())) return;
+    if (this.walletStore.claimTap() === 0) {
+      if (!this.tapCapNoticed) {
+        this.tapCapNoticed = true;
+        this.overlay.toast(`今天的點擊小魚乾已達上限（${TAP_DAILY_CAP}），明天再來！`);
+      }
+      return;
+    }
+    this.sfx.unlock();
+    this.sfx.plip();
+    this.overlay.floatText(tap.x, tap.y, '+1 🐟');
+    this.particles.burst(this.worldOf(pack.root), {
+      count: 4,
+      color: HOME_PACK_COLOR,
+      speed: 2,
+      size: 0.1,
+      spread: new Vector3(PACK_W * 0.3, PACK_H * 0.3, 0.1),
+    });
+    this.refreshWallet();
   }
 
   private notEnoughFish() {
@@ -690,7 +726,8 @@ export class Director {
   // ---------------------------------------------------------------- input
 
   private onTap(tap: Tap) {
-    if (this.mode === 'albumInspect') this.closeAlbumInspect();
+    if (this.mode === 'idle' && !this.busy) this.tapPack(tap);
+    else if (this.mode === 'albumInspect') this.closeAlbumInspect();
     else if (this.mode === 'tear') this.autoTear?.();
     else if (this.mode === 'advance') this.advance.fire('tap');
     else if (this.mode === 'summary') {

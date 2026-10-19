@@ -12,11 +12,51 @@ export interface Wallet {
   /** Local date (YYYY-MM-DD) of the last Daily Gift, or null if never. */
   lastDaily: string | null;
   pity: number;
+  /** Local date the Tap Fish count belongs to; a new day resets it. */
+  tapDay: string | null;
+  /** Tap Fish earned on `tapDay`. */
+  tapped: number;
 }
+
+/** Most Tap Fish a player can earn per local day. */
+export const TAP_DAILY_CAP = 500;
+/** Taps per second a person can plausibly make; faster taps don't earn. */
+export const TAP_MAX_PER_SECOND = 12;
 
 /** A brand-new player's wallet, Starter Gift included. */
 export function newWallet(): Wallet {
-  return { fish: STARTER_GIFT, lastDaily: null, pity: 0 };
+  return { fish: STARTER_GIFT, lastDaily: null, pity: 0, tapDay: null, tapped: 0 };
+}
+
+/** Fills in fields added after a wallet was first saved. */
+export function upgradeWallet(saved: Partial<Wallet> & { fish: number }): Wallet {
+  return { ...newWallet(), ...saved };
+}
+
+/** Tap Fish earned so far today. */
+export function tappedToday(wallet: Wallet, today: string): number {
+  return wallet.tapDay === today ? wallet.tapped : 0;
+}
+
+/** One Tap Fish, unless today's cap is reached. Pure. */
+export function claimTap(wallet: Wallet, today: string): { wallet: Wallet; granted: number } {
+  const tapped = tappedToday(wallet, today);
+  if (tapped >= TAP_DAILY_CAP) return { wallet, granted: 0 };
+  return { wallet: { ...wallet, fish: wallet.fish + 1, tapDay: today, tapped: tapped + 1 }, granted: 1 };
+}
+
+/** Sliding one-second window: rejects taps beyond what a person can make. */
+export class TapLimiter {
+  private times: number[] = [];
+
+  constructor(private maxPerSecond = TAP_MAX_PER_SECOND) {}
+
+  allow(nowMs: number): boolean {
+    this.times = this.times.filter((t) => nowMs - t < 1000);
+    if (this.times.length >= this.maxPerSecond) return false;
+    this.times.push(nowMs);
+    return true;
+  }
 }
 
 /** Local calendar date, so the Daily Gift resets at the player's midnight. */
