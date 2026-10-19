@@ -1,6 +1,9 @@
 /** Hand-made specs for every Meme Cat, drawn after reference images of each meme. */
 import {
   INK,
+  drawCat,
+  seededRandom,
+  type Head,
   bigText,
   burstLines,
   motionLines,
@@ -13,15 +16,19 @@ import {
 
 export const MEME_SPECS: Record<string, CatSpec> = {
   'ssr-oiia': {
-    fur: '#8f8478',
-    stripes: '#564c42',
-    muzzle: '#d8cfc2',
-    eyes: 'wide',
-    mouth: 'huge',
-    pose: 'sit',
-    dy: -25,
-    back: (ctx, _a, head) => spinArcs(ctx, head.x, head.y + 40, 190, 'rgba(255,255,255,0.8)'),
-    front: (ctx, a) => bigText(ctx, 'OIIA', a.x + a.w / 2, a.y + 50, 58, '#ffffff', 0),
+    // Ethel: grey tabby standing square on all fours, blank stare, white socks
+    fur: '#8f8a84',
+    stripes: '#55504a',
+    muzzle: '#e4ded6',
+    paws: '#f4f0ea',
+    eyes: 'normal',
+    iris: '#b8b070',
+    mouth: 'w',
+    pose: 'quad',
+    s: 0.78,
+    dy: -70,
+    back: (ctx, _a, head) => spinArcs(ctx, head.x, head.y + 80, 200, 'rgba(255,255,255,0.8)'),
+    front: (ctx, a) => bigText(ctx, 'OIIA', a.x + a.w / 2, a.y + 44, 58, '#ffffff', 0),
   },
   'ssr-grumpy': {
     fur: '#efe4d2',
@@ -80,30 +87,43 @@ export const MEME_SPECS: Record<string, CatSpec> = {
     },
   },
   'sr-chipi': {
-    // Brown-grey tabby close-up, bobbing its head
-    fur: '#9a8670',
-    stripes: '#5e4c3a',
-    muzzle: '#d8cbb8',
-    eyes: 'half',
-    iris: '#b8a050',
+    // Blurry close-up of a brown tabby nodding along, big eyes looking up
+    fur: '#8a7a6a',
+    stripes: '#4e4236',
+    muzzle: '#d8c0a0',
+    eyes: 'wide',
+    iris: '#9a8a50',
+    bigPupil: true,
     mouth: 'w',
-    tilt: 0.22,
-    s: 1.2,
-    dy: 20,
+    tilt: -0.18,
+    s: 1.35,
+    dy: 40,
     front: (ctx, a) => {
       notes(ctx, a, ['♪', '♫', '♪']);
-      bigText(ctx, 'CHIPI CHIPI', a.x + a.w / 2, a.y + a.h - 40, 40, '#ffe14a', 0);
+      bigText(ctx, 'CHIPI CHIPI', a.x + a.w / 2, a.y + 40, 40, '#ffe14a', 0);
     },
   },
   'sr-happy': {
-    // Grey-brown cat standing on its hind legs, arms out
-    fur: '#a89a88',
-    muzzle: '#f0ebe4',
-    eyes: 'dot',
-    mouth: 'smile',
+    // Small calico kitten standing up, arms flung wide, staring straight ahead
+    fur: '#f6f2ec',
+    eyes: 'wide',
+    iris: '#4a3a30',
+    bigPupil: true,
+    mouth: 'flat',
     pose: 'stand',
     s: 0.7,
     dy: -95,
+    earColor: '#8a7060',
+    cover: (ctx) => {
+      ctx.fillStyle = '#8a7060';
+      ctx.beginPath();
+      ctx.ellipse(-60, -70, 65, 45, 0.3, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#c8a070';
+      ctx.beginPath();
+      ctx.ellipse(70, -60, 50, 40, -0.3, 0, Math.PI * 2);
+      ctx.fill();
+    },
     front: (ctx, a) => {
       bigText(ctx, 'HAPPY', a.x + a.w / 2, a.y + 46, 46, '#ffe14a', 0);
       sparkle(ctx, a.x + 50, a.y + 120, 18);
@@ -111,36 +131,34 @@ export const MEME_SPECS: Record<string, CatSpec> = {
     },
   },
   'sr-pop': {
-    // Cream cat with an orange ear patch, mouth popped wide open
-    fur: '#f3ece2',
-    eyes: 'normal',
-    iris: '#8a7a50',
-    mouth: 'huge',
-    s: 1.15,
-    dy: 10,
+    // White cat, grey-brown patch over one ear, whole face swallowed by a round "pop"
+    fur: '#f6f3ee',
+    eyes: 'closed',
+    mouth: 'pop',
+    s: 1.2,
+    dy: 15,
     cover: (ctx) => {
-      ctx.fillStyle = '#d89a5a';
+      ctx.fillStyle = '#8a7a6a';
       ctx.beginPath();
-      ctx.ellipse(-80, -60, 55, 45, 0.5, 0, Math.PI * 2);
+      ctx.ellipse(-82, -58, 58, 52, 0.4, 0, Math.PI * 2);
       ctx.fill();
     },
-    earColor: '#d89a5a',
     back: (ctx, _a, head) => burstLines(ctx, head.x, head.y + 50, 12, 165, 215, 'rgba(255,255,255,0.55)'),
   },
   'r-huh': {
-    // Ben: a very round white cat with a small head, a thin black comb-over,
-    // pale green eyes staring blankly and a dropped jaw - "huh?"
+    // Ben: round white cat, small head, black comb-over, odd eyes (blue / amber),
+    // dark stripes down one flank, jaw dropped - "huh?"
     fur: '#fbfbf8',
     eyes: 'wide',
-    iris: '#b9c9a4',
+    iris: '#a9c3d6',
+    iris2: '#c49a5a',
     mouth: 'gasp',
     pose: 'chonk',
-    bodyPatch: '#4a4650',
+    bodyPatch: '#fbfbf8',
     s: 0.76,
     dy: -98,
     tilt: -0.08,
     cover: (ctx) => {
-      // Wavy comb-over across the forehead
       ctx.fillStyle = '#1e1c22';
       ctx.beginPath();
       ctx.moveTo(-78, -66);
@@ -152,52 +170,63 @@ export const MEME_SPECS: Record<string, CatSpec> = {
       ctx.closePath();
       ctx.fill();
     },
+    back: (ctx, a) => {
+      const g = ctx.createLinearGradient(0, a.y, 0, a.y + a.h);
+      g.addColorStop(0, '#0c0c10');
+      g.addColorStop(0.65, '#2a2a30');
+      g.addColorStop(1, '#8a8a90');
+      ctx.fillStyle = g;
+      ctx.fillRect(a.x, a.y, a.w, a.h);
+    },
     front: (ctx, a) => {
       bigText(ctx, '？', a.x + a.w - 70, a.y + 80, 90, '#ffffff', -0.2);
       bigText(ctx, 'huh', a.x + 80, a.y + 70, 52, '#ffffff', 0.15);
     },
   },
   'r-maxwell': {
-    // Black-and-white tuxedo cat lying in a loaf, spinning
+    // All-black loaf with a white chest, small head on the right, spinning
     fur: '#1e1e24',
     darkFur: true,
+    belly: '#ffffff',
     eyes: 'normal',
-    iris: '#b8d84a',
+    iris: '#8a9a6a',
     mouth: 'w',
-    tuxedo: true,
     pose: 'loaf',
     s: 0.75,
     dx: 70,
     dy: -10,
-    back: (ctx, a) => spinArcs(ctx, a.x + a.w / 2, a.y + a.h / 2 + 20, 190, 'rgba(255,255,255,0.7)'),
+    back: (ctx, a) => {
+      solidBg(ctx, a, '#f2f0ec');
+      spinArcs(ctx, a.x + a.w / 2, a.y + a.h / 2 + 20, 190, 'rgba(60,60,70,0.55)');
+    },
   },
   'r-smudge': {
-    // White cat at the dinner table, disgusted at the salad
+    // Fluffy white cat at the dinner table, squinting in disgust over its plate
     fur: '#fbfbf8',
     eyes: 'squint',
-    mouth: 'o',
-    dy: -30,
+    mouth: 'gasp',
+    s: 1.2,
+    dy: 0,
+    back: (ctx, a) => solidBg(ctx, a, '#1a1418'),
     front: (ctx, a) => {
       const cx = a.x + a.w / 2;
-      const y = a.y + a.h - 70;
+      const y = a.y + a.h - 30;
       ctx.fillStyle = '#ffffff';
       ctx.strokeStyle = INK;
       ctx.lineWidth = 5;
       ctx.beginPath();
-      ctx.ellipse(cx, y, 170, 42, 0, 0, Math.PI * 2);
+      ctx.ellipse(cx, y, 200, 48, 0, 0, Math.PI * 2);
       ctx.fill();
       ctx.stroke();
-      const leaves = ['#5aa832', '#7cc444', '#3f8a24', '#93d65a'];
-      for (let i = 0; i < 9; i++) {
-        ctx.fillStyle = leaves[i % 4];
+      ctx.strokeStyle = 'rgba(36,26,46,0.25)';
+      ctx.beginPath();
+      ctx.ellipse(cx, y - 4, 150, 30, 0, 0, Math.PI * 2);
+      ctx.stroke();
+      const leaves = ['#5aa832', '#7cc444', '#3f8a24'];
+      for (let i = 0; i < 5; i++) {
+        ctx.fillStyle = leaves[i % 3];
         ctx.beginPath();
-        ctx.ellipse(cx - 110 + i * 27, y - 18 - (i % 3) * 8, 30, 18, (i - 4) * 0.25, 0, Math.PI * 2);
-        ctx.fill();
-      }
-      ctx.fillStyle = '#e8402a';
-      for (const dx of [-60, 15, 80]) {
-        ctx.beginPath();
-        ctx.arc(cx + dx, y - 30, 13, 0, Math.PI * 2);
+        ctx.ellipse(cx - 60 + i * 30, y - 16 - (i % 2) * 8, 24, 14, (i - 2) * 0.3, 0, Math.PI * 2);
         ctx.fill();
       }
     },
@@ -250,40 +279,17 @@ export const MEME_SPECS: Record<string, CatSpec> = {
     },
   },
   'r-banana': {
-    fur: '#f1ece4',
+    // Crying kitten face poking out of a full banana suit, little paws sticking out
+    fur: '#e2d2bc',
     eyes: 'teary',
+    iris: '#2a2030',
     mouth: 'frown',
     noEars: true,
-    under: (ctx) => {
-      ctx.fillStyle = '#f7d64a';
-      ctx.strokeStyle = INK;
-      ctx.lineWidth = 6;
-      ctx.beginPath();
-      ctx.ellipse(0, -8, 150, 140, 0, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.stroke();
-      for (const side of [-1, 1]) {
-        ctx.beginPath();
-        ctx.moveTo(side * 40, -120);
-        ctx.quadraticCurveTo(side * 150, -200, side * 175, -100);
-        ctx.quadraticCurveTo(side * 120, -130, side * 70, -95);
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
-      }
-      ctx.fillStyle = '#6b4a22';
-      ctx.fillRect(-12, -175, 24, 36);
-      ctx.strokeRect(-12, -175, 24, 36);
-    },
-    cover: (ctx) => {
-      ctx.fillStyle = '#f7d64a';
-      ctx.fillRect(-200, -200, 400, 148);
-      ctx.strokeStyle = INK;
-      ctx.lineWidth = 5;
-      ctx.beginPath();
-      ctx.moveTo(-120, -52);
-      ctx.quadraticCurveTo(0, -40, 120, -52);
-      ctx.stroke();
+    s: 0.52,
+    dy: -20,
+    back: (ctx, a, head) => {
+      solidBg(ctx, a, '#f6f4ee');
+      fruitSuit(ctx, head, 'banana');
     },
   },
   'r-vibing': {
@@ -296,52 +302,52 @@ export const MEME_SPECS: Record<string, CatSpec> = {
     front: (ctx, a) => notes(ctx, a, ['♫', '♪', '♬']),
   },
   'n-polite': {
-    // White cat with a grey cap patch, tight-lipped polite smile
+    // White cat, dark patch over one ear, big amber-green eyes, tight-lipped smile
     fur: '#fbfbf8',
-    eyes: 'normal',
-    iris: '#3a2a20',
+    eyes: 'wide',
+    iris: '#a8a050',
     mouth: 'polite',
-    s: 1.15,
-    dy: 10,
+    s: 1.35,
+    dy: 35,
     cover: (ctx) => {
-      ctx.fillStyle = '#6a6a72';
+      ctx.fillStyle = '#3a3236';
       ctx.beginPath();
-      ctx.ellipse(55, -75, 70, 40, -0.3, 0, Math.PI * 2);
+      ctx.ellipse(82, -55, 52, 66, -0.3, 0, Math.PI * 2);
       ctx.fill();
     },
+    back: (ctx, a) => solidBg(ctx, a, '#7a3a32'),
   },
   'n-sad': {
-    // Tortoiseshell cat with glossy eyes, head bowed
-    fur: '#8a6a4a',
-    stripes: '#4a3424',
-    muzzle: '#c8a888',
+    // White Scottish Fold, folded ears, glossy teary eyes, small sad mouth
+    fur: '#fbfbf8',
+    flatEars: true,
     eyes: 'teary',
-    iris: '#c8a040',
-    mouth: 'frown',
-    tilt: -0.12,
-    s: 1.1,
-    dy: 15,
-    cover: (ctx) => {
-      ctx.fillStyle = '#d88a3a';
-      ctx.beginPath();
-      ctx.ellipse(-70, 20, 40, 50, 0.3, 0, Math.PI * 2);
-      ctx.fill();
+    iris: '#2a2436',
+    mouth: 'gasp',
+    s: 1.3,
+    dy: 30,
+    tilt: -0.08,
+    back: (ctx, a) => {
+      solidBg(ctx, a, '#b8ab94');
+      ctx.fillStyle = 'rgba(255,255,255,0.18)';
+      for (let x = a.x; x < a.x + a.w; x += 44) ctx.fillRect(x, a.y, 18, a.h);
     },
   },
   'n-scream': {
-    // Silver tabby kitten clutching its face, screaming
+    // Silver tabby kitten clutching the top of its head, screaming
     fur: '#c4c8cc',
     stripes: '#7a8086',
     eyes: 'squeeze',
     mouth: 'huge',
     s: 1.05,
+    dy: 20,
     over: (ctx) => {
       ctx.fillStyle = '#c4c8cc';
       ctx.strokeStyle = INK;
       ctx.lineWidth = 5;
       for (const side of [-1, 1]) {
         ctx.beginPath();
-        ctx.ellipse(side * 100, 20, 30, 42, side * -0.3, 0, Math.PI * 2);
+        ctx.ellipse(side * 92, -66, 30, 40, side * 0.6, 0, Math.PI * 2);
         ctx.fill();
         ctx.stroke();
       }
@@ -352,39 +358,67 @@ export const MEME_SPECS: Record<string, CatSpec> = {
     },
   },
   'n-shocked': {
-    // Silver tabby with huge round eyes
-    fur: '#b8b8b4',
-    stripes: '#6e6e6a',
-    muzzle: '#e8e8e4',
+    // White cat with brown tabby patches, eyes like saucers, mouth just open
+    fur: '#fbf8f2',
     eyes: 'wide',
+    iris: '#a8b078',
     mouth: 'o',
-    s: 1.12,
+    s: 1.2,
+    dy: 20,
+    tilt: -0.05,
+    earColor: '#a07a50',
+    cover: (ctx) => {
+      ctx.fillStyle = '#a07a50';
+      ctx.beginPath();
+      ctx.ellipse(-65, -68, 58, 42, 0.3, 0, Math.PI * 2);
+      ctx.ellipse(68, -70, 55, 40, -0.3, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#5e4630';
+      ctx.lineWidth = 6;
+      for (const x of [-80, -55, 55, 80]) {
+        ctx.beginPath();
+        ctx.moveTo(x, -92);
+        ctx.lineTo(x * 0.9, -60);
+        ctx.stroke();
+      }
+    },
     front: (ctx, a) => {
-      bigText(ctx, '！', a.x + a.w - 70, a.y + 80, 80, '#fff27a', 0.15);
-      bigText(ctx, '！', a.x + 60, a.y + 90, 64, '#fff27a', -0.15);
+      bigText(ctx, '！', a.x + a.w - 60, a.y + 70, 72, '#fff27a', 0.15);
+      bigText(ctx, '！', a.x + 55, a.y + 80, 58, '#fff27a', -0.15);
     },
   },
   'n-zoning': {
-    // Black cat staring into the middle distance
+    // Black cat on a pink backdrop, half-lidded green eyes drifting off to one side
     fur: '#26232a',
     darkFur: true,
-    eyes: 'half',
-    iris: '#d8c040',
+    eyes: 'side',
+    iris: '#9ac85a',
     mouth: 'flat',
-    pose: 'sit',
-    dy: -25,
-    front: (ctx, a) => bigText(ctx, '…', a.x + a.w - 80, a.y + 70, 70, '#ffffff', 0),
+    s: 1.15,
+    dy: -10,
+    tilt: -0.06,
+    back: (ctx, a, head) => {
+      solidBg(ctx, a, '#ef9a96');
+      ctx.fillStyle = '#26232a';
+      ctx.beginPath();
+      ctx.ellipse(head.x - 10, a.y + a.h + 40, 170, 200, 0, 0, Math.PI * 2);
+      ctx.fill();
+    },
+    front: (ctx, a) => bigText(ctx, '…', a.x + a.w - 70, a.y + 60, 70, '#ffffff', 0),
   },
   'n-wajaja': {
-    // White cat laughing its head off
-    fur: '#fbfbf8',
+    // Blurry cat cackling, mouth wide open, a yellow emoji hand pointing at you
+    fur: '#f2eeea',
+    stripes: '#9a9090',
     eyes: 'squeeze',
     mouth: 'huge',
-    tilt: -0.15,
-    s: 1.05,
+    s: 1.2,
+    dx: 30,
+    dy: 10,
+    tilt: -0.12,
     front: (ctx, a) => {
-      bigText(ctx, 'WAJAJA', a.x + a.w / 2, a.y + a.h - 45, 48, '#ffe14a', -0.05);
-      sparkle(ctx, a.x + 60, a.y + 70, 16);
+      pointingHand(ctx, a.x + 95, a.y + a.h - 95);
+      bigText(ctx, 'WAJAJA', a.x + a.w / 2, a.y + 42, 46, '#ffe14a', -0.05);
     },
   },
   'n-chips': {
@@ -441,38 +475,12 @@ export const MEME_SPECS: Record<string, CatSpec> = {
   // ---------------------------------------------------------------- added in the 60-cat expansion
 
   'ssr-bongo': {
-    // Plain white doodle cat slamming the bongos
+    // The doodle: a white blob behind the table edge, paws up, bongos below
     fur: '#ffffff',
     eyes: 'dot',
     mouth: 'w',
-    dy: -40,
-    front: (ctx, a) => {
-      const y = a.y + a.h - 110;
-      for (const side of [-1, 1]) {
-        const x = a.x + a.w / 2 + side * 85;
-        ctx.fillStyle = '#a0522d';
-        ctx.strokeStyle = INK;
-        ctx.lineWidth = 5;
-        ctx.beginPath();
-        ctx.moveTo(x - 62, y);
-        ctx.lineTo(x - 48, y + 100);
-        ctx.lineTo(x + 48, y + 100);
-        ctx.lineTo(x + 62, y);
-        ctx.fill();
-        ctx.stroke();
-        ctx.fillStyle = '#f2e1c0';
-        ctx.beginPath();
-        ctx.ellipse(x, y, 62, 18, 0, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.stroke();
-        ctx.fillStyle = '#ffffff';
-        ctx.beginPath();
-        ctx.ellipse(x - side * 6, y - 22, 30, 20, 0, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.stroke();
-        motionLines(ctx, x - side * 6, y - 52, 3);
-      }
-    },
+    noCat: true,
+    back: (ctx, a) => bongoCat(ctx, a),
   },
   'ssr-floppa': {
     // Caracal with black ear tufts and a serious face
@@ -525,40 +533,63 @@ export const MEME_SPECS: Record<string, CatSpec> = {
     },
   },
   'sr-ceiling': {
-    fur: '#f4f4f4',
-    eyes: 'normal',
-    iris: '#c8b850',
+    // Ginger cat peering down through a ragged hole in a grey ceiling
+    fur: '#e2ad78',
+    stripes: '#b8844e',
+    muzzle: '#f2dcc0',
+    eyes: 'wide',
+    iris: '#3a3028',
+    bigPupil: true,
     mouth: 'w',
-    dy: -40,
+    s: 0.85,
+    dy: -20,
+    tilt: -0.08,
     back: (ctx, a, head) => {
-      ctx.fillStyle = '#1a1210';
+      ctx.fillStyle = '#100c0c';
       ctx.beginPath();
-      ctx.ellipse(head.x, a.y + 175, 150 * head.s, 26, 0, 0, Math.PI * 2);
+      ceilingHole(ctx, head);
       ctx.fill();
+      void a;
     },
-    front: (ctx, a) => {
-      ctx.fillStyle = '#e8dcc6';
-      ctx.fillRect(a.x, a.y, a.w, 175);
-      ctx.strokeStyle = 'rgba(80, 60, 40, 0.35)';
-      ctx.lineWidth = 3;
-      for (let x = a.x; x < a.x + a.w; x += 74) ctx.strokeRect(x, a.y - 4, 74, 179);
-      ctx.strokeStyle = INK;
-      ctx.lineWidth = 5;
+    front: (ctx, a, head) => {
+      const g = ctx.createLinearGradient(0, a.y, 0, a.y + a.h);
+      g.addColorStop(0, '#c4c4c8');
+      g.addColorStop(1, '#5a5a60');
+      ctx.fillStyle = g;
       ctx.beginPath();
-      ctx.moveTo(a.x, a.y + 175);
-      ctx.lineTo(a.x + a.w, a.y + 175);
+      ctx.rect(a.x, a.y, a.w, a.h);
+      ceilingHole(ctx, head);
+      ctx.fill('evenodd');
+      ctx.strokeStyle = '#f4f2ee';
+      ctx.lineWidth = 9;
+      ctx.lineJoin = 'round';
+      ctx.beginPath();
+      ceilingHole(ctx, head);
       ctx.stroke();
     },
   },
   'sr-thumbsup': {
-    // Grey-white cat, eyes brimming, giving a (human) thumbs up
-    fur: '#b9b4ae',
-    muzzle: '#f2efea',
+    // Calico in tears, one white paw raised in a thumbs up
+    fur: '#f6f2ec',
     eyes: 'teary',
-    iris: '#7aa0c8',
-    mouth: 'frown',
-    dx: -40,
-    front: (ctx, a) => thumbsUp(ctx, a.x + a.w - 95, a.y + a.h - 120),
+    iris: '#2a2030',
+    mouth: 'gasp',
+    s: 1.25,
+    dx: 40,
+    dy: 30,
+    earColor: '#c88a50',
+    cover: (ctx) => {
+      ctx.fillStyle = '#c88a50';
+      ctx.beginPath();
+      ctx.ellipse(-40, -82, 90, 40, 0.1, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#5a4636';
+      ctx.beginPath();
+      ctx.ellipse(70, -62, 50, 42, -0.3, 0, Math.PI * 2);
+      ctx.fill();
+    },
+    back: (ctx, a) => solidBg(ctx, a, '#120e14'),
+    front: (ctx, a) => pawThumb(ctx, a.x + 85, a.y + a.h - 110),
   },
   'sr-thurston': {
     // White cat throwing its head back in a long howl
@@ -570,15 +601,16 @@ export const MEME_SPECS: Record<string, CatSpec> = {
     front: (ctx, a) => bigText(ctx, '嗷嗚——', a.x + a.w - 110, a.y + 70, 54, '#ffffff', 0.15),
   },
   'sr-fresh': {
-    // Orange tabby squashed against the glass, side-eyeing the camera
-    fur: '#e0a066',
-    stripes: '#b0703a',
-    muzzle: '#f7e3cc',
+    // Ginger tabby right up against the glass, half-lidded, side-eyeing the camera
+    fur: '#e8a868',
+    stripes: '#c07838',
+    muzzle: '#f6dcc0',
     eyes: 'side',
-    iris: '#c8a040',
-    mouth: 'smirk',
-    s: 1.2,
-    dy: 15,
+    iris: '#b89040',
+    mouth: 'flat',
+    s: 1.4,
+    dy: 45,
+    tilt: 0.12,
     front: glassGlare,
   },
   'sr-stepan': {
@@ -686,16 +718,23 @@ export const MEME_SPECS: Record<string, CatSpec> = {
     front: (ctx, a) => steeringWheel(ctx, a.x + a.w / 2, a.y + a.h - 40, '#7f93ad'),
   },
   'r-mamaliele': {
-    // Golden tabby, huge green eyes, grumbling non-stop
-    fur: '#c8945a',
-    stripes: '#8a5a2e',
+    // Golden Scottish Fold, enormous green eyes, mouth going non-stop
+    fur: '#d9a868',
+    stripes: '#a87038',
     muzzle: '#f2dcc0',
-    eyes: 'normal',
-    iris: '#6ab84a',
-    mouth: 'open',
-    s: 1.2,
-    dy: 25,
-    front: (ctx, a) => speechBubble(ctx, a.x + a.w - 110, a.y + 70, '#@%&!'),
+    eyes: 'wide',
+    iris: '#7ab84a',
+    mouth: 'gasp',
+    flatEars: true,
+    s: 1.4,
+    dy: 35,
+    tilt: 0.1,
+    back: (ctx, a) => {
+      solidBg(ctx, a, '#8a7a6a');
+      ctx.fillStyle = 'rgba(255,255,255,0.75)';
+      for (const x of [a.x + a.w - 70, a.x + a.w - 30]) ctx.fillRect(x, a.y, 14, a.h);
+    },
+    front: (ctx, a) => speechBubble(ctx, a.x + 105, a.y + 70, '#@%&!'),
   },
   'r-mengbi': {
     // White cat with a ginger cap, utterly lost
@@ -717,43 +756,74 @@ export const MEME_SPECS: Record<string, CatSpec> = {
     },
   },
   'r-wet': {
-    // Soaked grey cat, ears flat, fur clumped
-    fur: '#5a5652',
-    darkFur: true,
+    // Soaked grey cat in a steel sink: slit-pupil yellow eyes, fangs, dripping fur
+    fur: '#8e8a84',
+    stripes: '#5a5650',
     flatEars: true,
     wet: true,
     eyes: 'wide',
-    mouth: 'flat',
-    s: 1.1,
+    iris: '#e8d03a',
+    slit: true,
+    mouth: 'gasp',
+    s: 1.15,
+    dy: 10,
+    back: (ctx, a) => {
+      const g = ctx.createLinearGradient(a.x, a.y, a.x + a.w, a.y + a.h);
+      g.addColorStop(0, '#a8acb0');
+      g.addColorStop(0.5, '#d8dade');
+      g.addColorStop(1, '#7a7e84');
+      ctx.fillStyle = g;
+      ctx.fillRect(a.x, a.y, a.w, a.h);
+      ctx.fillStyle = 'rgba(255,255,255,0.7)';
+      const rand = seededRandom('sink');
+      for (let i = 0; i < 24; i++) {
+        ctx.beginPath();
+        ctx.arc(a.x + rand() * a.w, a.y + rand() * a.h, 2 + rand() * 4, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    },
   },
   'r-yamero': {
-    // Black-and-white cat bawling: "YAMERO!!"
-    fur: '#f6f4f0',
+    // Grey-capped white cat bawling, teary eyes, fangs out: "YAMERO!!"
+    fur: '#f2f0ec',
     eyes: 'teary',
-    iris: '#3a2a20',
-    mouth: 'open',
-    s: 1.05,
-    dy: 20,
+    iris: '#2a2030',
+    mouth: 'huge',
+    s: 1.2,
+    dy: 30,
+    tilt: 0.1,
+    earColor: '#4a4650',
     cover: (ctx) => {
-      ctx.fillStyle = '#26232a';
+      ctx.fillStyle = '#4a4650';
       ctx.beginPath();
-      ctx.ellipse(-55, -60, 70, 50, 0.3, 0, Math.PI * 2);
-      ctx.ellipse(60, -70, 60, 40, -0.3, 0, Math.PI * 2);
+      ctx.ellipse(-55, -60, 72, 52, 0.3, 0, Math.PI * 2);
+      ctx.ellipse(60, -70, 62, 42, -0.3, 0, Math.PI * 2);
       ctx.fill();
     },
-    earColor: '#26232a',
     front: (ctx, a) => bigText(ctx, 'YAMERO!!', a.x + a.w / 2, a.y + 44, 52, '#ffffff', 0),
   },
   'r-no': {
-    // Wide-eyed ginger tabby, very firm about it
-    fur: '#e8a050',
-    stripes: '#b8692a',
-    muzzle: '#fff1e0',
+    // White kitten with a dark cap, huge round dark eyes and a red bell collar
+    fur: '#f8f6f2',
     eyes: 'wide',
-    mouth: 'flat',
-    s: 1.2,
-    dy: 25,
-    front: (ctx, a) => bigText(ctx, 'NO.', a.x + a.w / 2, a.y + 48, 64, '#ffffff', 0),
+    iris: '#2a2026',
+    bigPupil: true,
+    mouth: 'w',
+    pose: 'sit',
+    s: 0.95,
+    dy: -20,
+    earColor: '#6a5e58',
+    cover: (ctx) => {
+      ctx.fillStyle = '#4a4240';
+      ctx.beginPath();
+      ctx.ellipse(-62, -66, 60, 46, 0.4, 0, Math.PI * 2);
+      ctx.ellipse(66, -60, 52, 50, -0.4, 0, Math.PI * 2);
+      ctx.fill();
+    },
+    front: (ctx, a, head) => {
+      collarBell(ctx, head.x - 20, head.y + 100 * head.s);
+      bigText(ctx, 'NO.', a.x + a.w / 2, a.y + 44, 60, '#ffffff', 0);
+    },
   },
   'r-ak': {
     // Tabby standing upright, armed to the whiskers
@@ -790,78 +860,44 @@ export const MEME_SPECS: Record<string, CatSpec> = {
     dy: 10,
   },
   'r-apple': {
-    // The apple-hooded cousin of Banana Cat
-    fur: '#efe6dc',
+    // The apple-suited cousin of Banana Cat
+    fur: '#e2d2bc',
     eyes: 'teary',
+    iris: '#2a2030',
     mouth: 'frown',
     noEars: true,
-    under: (ctx) => {
-      ctx.fillStyle = '#e8403a';
-      ctx.strokeStyle = INK;
-      ctx.lineWidth = 6;
-      ctx.beginPath();
-      ctx.moveTo(0, -120);
-      ctx.bezierCurveTo(-120, -190, -190, -40, -130, 60);
-      ctx.bezierCurveTo(-80, 150, 80, 150, 130, 60);
-      ctx.bezierCurveTo(190, -40, 120, -190, 0, -120);
-      ctx.fill();
-      ctx.stroke();
-      ctx.fillStyle = '#6b4a22';
-      ctx.fillRect(-8, -170, 16, 50);
-      ctx.strokeRect(-8, -170, 16, 50);
-      ctx.fillStyle = '#5ab832';
-      ctx.beginPath();
-      ctx.ellipse(34, -160, 34, 16, -0.4, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.stroke();
-    },
-    cover: (ctx) => {
-      ctx.fillStyle = '#e8403a';
-      ctx.fillRect(-200, -200, 400, 148);
-      ctx.strokeStyle = INK;
-      ctx.lineWidth = 5;
-      ctx.beginPath();
-      ctx.moveTo(-120, -52);
-      ctx.quadraticCurveTo(0, -40, 120, -52);
-      ctx.stroke();
+    s: 0.55,
+    dy: 10,
+    back: (ctx, a, head) => {
+      solidBg(ctx, a, '#f6f4ee');
+      fruitSuit(ctx, head, 'apple');
     },
   },
   'r-dance': {
-    // Silver tabby in a teal beret, mid-dance
-    fur: '#b4b8bc',
-    stripes: '#6e7276',
-    muzzle: '#eceef0',
-    eyes: 'half',
-    iris: '#c8b850',
+    // Three kittens dancing upright on the beach at sunset
+    fur: '#efe2cc',
+    eyes: 'dot',
     mouth: 'w',
     pose: 'stand',
-    s: 0.7,
-    dy: -95,
-    tilt: 0.12,
-    over: (ctx) => {
-      ctx.fillStyle = '#1aa0a8';
-      ctx.strokeStyle = INK;
-      ctx.lineWidth = 5;
-      ctx.beginPath();
-      ctx.ellipse(-10, -92, 112, 34, -0.12, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.stroke();
-      ctx.beginPath();
-      ctx.arc(-14, -128, 9, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.stroke();
+    s: 0.42,
+    dy: -30,
+    back: (ctx, a) => {
+      sunsetBeach(ctx, a);
+      drawCat(ctx, DANCER_LEFT, a);
+      drawCat(ctx, DANCER_RIGHT, a);
     },
-    front: (ctx, a) => notes(ctx, a, ['♪', '♫', '♪']),
   },
   'n-sleep': {
-    // Tan tabby, chin up, eyes squeezed in deep contentment
-    fur: '#c8a878',
-    stripes: '#8a6a40',
-    muzzle: '#f0e2cc',
+    // Grey-and-white Scottish Fold slumped back on its bottom, chin up, fast asleep
+    fur: '#a8a8b0',
+    belly: '#f2f2f4',
+    flatEars: true,
     eyes: 'closed',
     mouth: 'w',
-    tilt: -0.25,
-    s: 1.1,
+    pose: 'chonk',
+    s: 0.62,
+    dy: -80,
+    tilt: -0.35,
     front: (ctx, a) => {
       bigText(ctx, 'Z', a.x + a.w - 130, a.y + 120, 44, '#ffffff', 0.2);
       bigText(ctx, 'z', a.x + a.w - 95, a.y + 85, 36, '#ffffff', 0.2);
@@ -880,31 +916,30 @@ export const MEME_SPECS: Record<string, CatSpec> = {
     front: (ctx, a) => angerMark(ctx, a.x + a.w - 80, a.y + 80),
   },
   'n-hungry': {
-    // Pink nose pressed right up to the lens
-    fur: '#f2d4d8',
+    // Ginger cat filmed from below, chin up, eyes shut, mouth hanging open
+    fur: '#e8a060',
+    stripes: '#c07838',
+    muzzle: '#f6d8b8',
     eyes: 'closed',
-    mouth: 'o',
-    s: 1.45,
-    dy: 50,
+    mouth: 'open',
+    s: 1.5,
+    dy: 60,
+    tilt: -0.3,
     front: (ctx, a) => bigText(ctx, '好餓喔…', a.x + a.w / 2, a.y + 46, 46, '#ffffff', 0),
   },
   'n-corn': {
-    // Ginger-and-white kitten gnawing a corn cob
-    fur: '#f4ece2',
-    eyes: 'half',
-    iris: '#c8a050',
-    mouth: 'open',
-    s: 1.05,
-    dy: -10,
-    cover: (ctx) => {
-      ctx.fillStyle = '#e8963a';
-      ctx.beginPath();
-      ctx.ellipse(-60, -50, 70, 55, 0.4, 0, Math.PI * 2);
-      ctx.ellipse(70, -60, 55, 45, -0.3, 0, Math.PI * 2);
-      ctx.fill();
+    // Crying kitten face in a corn-on-the-cob suit
+    fur: '#e2d2bc',
+    eyes: 'teary',
+    iris: '#2a2030',
+    mouth: 'frown',
+    noEars: true,
+    s: 0.48,
+    dy: 10,
+    back: (ctx, a, head) => {
+      solidBg(ctx, a, '#f6f4ee');
+      fruitSuit(ctx, head, 'corn');
     },
-    earColor: '#e8963a',
-    front: (ctx, _a, head) => corn(ctx, head.x + 10, head.y + 75 * head.s),
   },
   'n-mic': {
     // Brown tabby belting into a microphone
@@ -952,12 +987,14 @@ export const MEME_SPECS: Record<string, CatSpec> = {
     },
   },
   'n-belyash': {
-    // Fluffy white cat, tongue out, about to be sick
-    fur: '#fbfaf6',
-    spiky: true,
-    eyes: 'wide',
+    // Cream cat, eyes crossed, tongue lolling out
+    fur: '#f6eedc',
+    eyes: 'derp',
+    iris: '#3a2a20',
     mouth: 'blep',
-    s: 1.05,
+    s: 1.25,
+    dy: 25,
+    tilt: 0.08,
     front: (ctx, a) => bigText(ctx, '噁——', a.x + a.w - 120, a.y + 64, 48, '#b8e86a', 0.15),
   },
   'n-bowl': {
@@ -990,24 +1027,36 @@ export const MEME_SPECS: Record<string, CatSpec> = {
     },
   },
   'n-nails': {
-    // Black cat filing its claws, unbothered
+    // Black cat against a graffiti brick wall, filing its claws, unbothered
     fur: '#221f26',
     darkFur: true,
     eyes: 'half',
-    iris: '#d8d040',
+    iris: '#c8e040',
     mouth: 'flat',
-    s: 1.05,
-    dy: -20,
-    front: (ctx, _a, head) => nailFile(ctx, head.x + 40, head.y + 150),
+    pose: 'sit',
+    s: 0.85,
+    dy: -30,
+    back: (ctx, a) => brickWall(ctx, a),
+    front: (ctx, _a, head) => nailFile(ctx, head.x + 40, head.y + 150 * head.s),
   },
   'n-eyeroll': {
-    // Eyes rolled all the way back, tongue out
-    fur: '#4a3e38',
-    darkFur: true,
+    // White cat flopped on the table, eyes rolled back, tongue out
+    fur: '#fbfbf8',
     eyes: 'up',
     mouth: 'blep',
-    s: 1.2,
-    dy: 15,
+    s: 1.15,
+    dy: 30,
+    tilt: 0.45,
+    back: (ctx, a) => {
+      solidBg(ctx, a, '#2a2830');
+      ctx.fillStyle = '#e8e4dc';
+      ctx.beginPath();
+      ctx.moveTo(a.x, a.y + a.h * 0.62);
+      ctx.lineTo(a.x + a.w, a.y + a.h * 0.5);
+      ctx.lineTo(a.x + a.w, a.y + a.h);
+      ctx.lineTo(a.x, a.y + a.h);
+      ctx.fill();
+    },
   },
   'n-loki': {
     // Grey-and-white office worker, typing away
@@ -1020,47 +1069,45 @@ export const MEME_SPECS: Record<string, CatSpec> = {
     front: (ctx, a) => laptop(ctx, a.x + a.w / 2, a.y + a.h - 20, '#9a9aa0'),
   },
   'n-service': {
-    // Tuxedo cat with a little black moustache and a headset
-    fur: '#26232a',
-    darkFur: true,
-    tuxedo: true,
-    eyes: 'normal',
+    // White-blazed tuxedo with a black moustache spot and round green eyes, on the line
+    fur: '#fbfbf8',
+    eyes: 'wide',
     iris: '#a8b860',
     mouth: 'w',
-    s: 1.05,
-    over: (ctx) => {
-      ctx.fillStyle = '#26232a';
+    s: 1.1,
+    dy: 10,
+    earColor: '#1e1c22',
+    cover: (ctx) => {
+      ctx.fillStyle = '#1e1c22';
       ctx.beginPath();
-      ctx.ellipse(-12, 50, 16, 8, 0.3, 0, Math.PI * 2);
-      ctx.ellipse(12, 50, 16, 8, -0.3, 0, Math.PI * 2);
+      ctx.ellipse(-78, -48, 60, 72, 0.3, 0, Math.PI * 2);
+      ctx.ellipse(78, -48, 60, 72, -0.3, 0, Math.PI * 2);
+      ctx.fill();
+    },
+    over: (ctx) => {
+      ctx.fillStyle = '#1e1c22';
+      ctx.beginPath();
+      ctx.ellipse(0, 54, 20, 12, 0, 0, Math.PI * 2);
       ctx.fill();
       headset(ctx);
     },
   },
   'n-clip': {
-    // Ginger-and-white cat with a cute hair clip
-    fur: '#f0a860',
-    stripes: '#c87a3a',
-    muzzle: '#fff6ec',
-    eyes: 'sparkle',
-    iris: '#c8a050',
+    // Ginger-and-white cat politely holding chopsticks: "您好，我吃一點"
+    fur: '#e8a868',
+    stripes: '#c07838',
+    muzzle: '#fbf6ee',
+    belly: '#fbf6ee',
+    eyes: 'closed',
     mouth: 'w',
-    blush: true,
     pose: 'sit',
-    s: 0.9,
-    dy: -15,
-    over: (ctx) => {
-      ctx.fillStyle = '#ff7ab0';
-      ctx.strokeStyle = INK;
-      ctx.lineWidth = 4;
-      ctx.beginPath();
-      ctx.roundRect(40, -86, 56, 18, 9);
-      ctx.fill();
-      ctx.stroke();
-    },
-    front: (ctx, a) => {
-      heart(ctx, a.x + 70, a.y + 80, 18);
-      heart(ctx, a.x + a.w - 70, a.y + 110, 14);
+    s: 0.85,
+    dx: -40,
+    dy: -45,
+    tilt: 0.15,
+    front: (ctx, a, head) => {
+      chopsticks(ctx, head.x + 90, head.y + 140 * head.s);
+      bigText(ctx, '您好 我吃一點', a.x + a.w / 2, a.y + a.h - 30, 34, '#ffffff', 0);
     },
   },
   'n-laundry': {
@@ -1123,13 +1170,15 @@ export const MEME_SPECS: Record<string, CatSpec> = {
     },
   },
   'n-luna': {
-    // White cat with a tabby cap and big dark eyes, mid-chew
+    // White cat with a tabby cap, leaning into the lens: huge dark eyes, green screen
     fur: '#f8f6f2',
-    eyes: 'normal',
-    iris: '#3a2a20',
-    mouth: 'o',
-    s: 1.05,
-    dy: -25,
+    eyes: 'wide',
+    iris: '#2a2420',
+    bigPupil: true,
+    mouth: 'w',
+    s: 1.45,
+    dy: 60,
+    earColor: '#7a6a5a',
     cover: (ctx) => {
       ctx.fillStyle = '#7a6a5a';
       ctx.beginPath();
@@ -1144,24 +1193,7 @@ export const MEME_SPECS: Record<string, CatSpec> = {
         ctx.stroke();
       }
     },
-    earColor: '#7a6a5a',
-    front: (ctx, a) => {
-      const x = a.x + a.w / 2;
-      const y = a.y + a.h - 45;
-      ctx.fillStyle = '#e8eef4';
-      ctx.strokeStyle = INK;
-      ctx.lineWidth = 5;
-      ctx.beginPath();
-      ctx.ellipse(x, y, 120, 30, 0, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.stroke();
-      ctx.fillStyle = '#c87a5a';
-      for (const dx of [-50, 0, 50]) {
-        ctx.beginPath();
-        ctx.arc(x + dx, y - 10, 16, 0, Math.PI * 2);
-        ctx.fill();
-      }
-    },
+    back: (ctx, a) => solidBg(ctx, a, '#3acf3a'),
   },
   'n-cowdance': {
     // Black-and-white "cow" cat standing up, wiggling
@@ -1199,28 +1231,6 @@ function glassGlare(ctx: CanvasRenderingContext2D, a: ArtArea) {
     ctx.beginPath();
     ctx.moveTo(x, a.y + a.h);
     ctx.lineTo(x + 120, a.y);
-    ctx.stroke();
-  }
-}
-
-function thumbsUp(ctx: CanvasRenderingContext2D, x: number, y: number) {
-  ctx.fillStyle = '#f2c9a8';
-  ctx.strokeStyle = INK;
-  ctx.lineWidth = 5;
-  ctx.beginPath();
-  ctx.roundRect(x - 50, y - 10, 100, 90, 24);
-  ctx.fill();
-  ctx.stroke();
-  ctx.beginPath();
-  ctx.roundRect(x - 44, y - 90, 36, 96, 18);
-  ctx.fill();
-  ctx.stroke();
-  ctx.strokeStyle = 'rgba(36,26,46,0.5)';
-  ctx.lineWidth = 3;
-  for (const dy of [22, 44, 64]) {
-    ctx.beginPath();
-    ctx.moveTo(x - 8, y + dy);
-    ctx.lineTo(x + 44, y + dy);
     ctx.stroke();
   }
 }
@@ -1397,35 +1407,6 @@ function angerMark(ctx: CanvasRenderingContext2D, x: number, y: number) {
   }
 }
 
-function corn(ctx: CanvasRenderingContext2D, x: number, y: number) {
-  ctx.save();
-  ctx.translate(x, y);
-  ctx.rotate(-0.15);
-  ctx.fillStyle = '#ffd23a';
-  ctx.strokeStyle = INK;
-  ctx.lineWidth = 5;
-  ctx.beginPath();
-  ctx.ellipse(0, 0, 150, 42, 0, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.stroke();
-  ctx.fillStyle = '#e8a81a';
-  for (let i = -6; i <= 6; i++) {
-    for (const row of [-18, 0, 18]) {
-      ctx.beginPath();
-      ctx.ellipse(i * 20, row, 7, 8, 0, 0, Math.PI * 2);
-      ctx.fill();
-    }
-  }
-  ctx.fillStyle = '#7ac83a';
-  ctx.beginPath();
-  ctx.moveTo(140, -30);
-  ctx.quadraticCurveTo(210, -50, 230, 10);
-  ctx.quadraticCurveTo(190, 0, 140, 30);
-  ctx.fill();
-  ctx.stroke();
-  ctx.restore();
-}
-
 function microphone(ctx: CanvasRenderingContext2D, x: number, y: number) {
   ctx.save();
   ctx.translate(x, y);
@@ -1534,11 +1515,401 @@ function headset(ctx: CanvasRenderingContext2D) {
   ctx.fill();
 }
 
-function heart(ctx: CanvasRenderingContext2D, x: number, y: number, r: number) {
-  ctx.fillStyle = '#ff6fa8';
+// ---------------------------------------------------------------- props for the reference redraw
+
+const DANCER_LEFT: CatSpec = {
+  fur: '#f6f4f0',
+  eyes: 'dot',
+  mouth: 'w',
+  pose: 'stand',
+  s: 0.4,
+  dx: -138,
+  dy: -20,
+  tilt: -0.1,
+  earColor: '#2a262e',
+  cover: (ctx) => {
+    ctx.fillStyle = '#2a262e';
+    ctx.beginPath();
+    ctx.ellipse(0, -80, 100, 34, 0, 0, Math.PI * 2);
+    ctx.fill();
+  },
+};
+
+const DANCER_RIGHT: CatSpec = {
+  fur: '#b4b4b8',
+  stripes: '#7a7a80',
+  eyes: 'dot',
+  mouth: 'w',
+  pose: 'stand',
+  s: 0.4,
+  dx: 138,
+  dy: -24,
+  tilt: 0.1,
+};
+
+function solidBg(ctx: CanvasRenderingContext2D, a: ArtArea, color: string) {
+  ctx.fillStyle = color;
+  ctx.fillRect(a.x, a.y, a.w, a.h);
+}
+
+function bongoCat(ctx: CanvasRenderingContext2D, a: ArtArea) {
+  solidBg(ctx, a, '#fbf8f2');
+  const ly = (x: number) => a.y + 175 + (x - a.x) * 0.2;
+  ctx.strokeStyle = INK;
+  ctx.lineWidth = 6;
+  ctx.lineJoin = 'round';
+  // Blob body with two ears, cut off by the table edge
+  ctx.fillStyle = '#ffffff';
   ctx.beginPath();
-  ctx.moveTo(x, y + r);
-  ctx.bezierCurveTo(x - r * 2, y - r * 0.4, x - r * 0.8, y - r * 1.8, x, y - r * 0.6);
-  ctx.bezierCurveTo(x + r * 0.8, y - r * 1.8, x + r * 2, y - r * 0.4, x, y + r);
+  ctx.moveTo(a.x + 60, ly(a.x + 60));
+  ctx.bezierCurveTo(a.x + 60, a.y + 120, a.x + 140, a.y + 80, a.x + 240, a.y + 82);
+  ctx.lineTo(a.x + 292, a.y + 22);
+  ctx.lineTo(a.x + 330, a.y + 86);
+  ctx.lineTo(a.x + 392, a.y + 30);
+  ctx.lineTo(a.x + 408, a.y + 112);
+  ctx.bezierCurveTo(a.x + 436, a.y + 160, a.x + a.w, a.y + 210, a.x + a.w, ly(a.x + a.w));
+  ctx.closePath();
   ctx.fill();
+  ctx.stroke();
+  // Face
+  ctx.fillStyle = INK;
+  for (const [x, y] of [
+    [a.x + 230, a.y + 168],
+    [a.x + 344, a.y + 180],
+  ]) {
+    ctx.beginPath();
+    ctx.arc(x, y, 9, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.lineWidth = 4;
+  ctx.beginPath();
+  ctx.arc(a.x + 278, a.y + 180, 8, 0, Math.PI);
+  ctx.moveTo(a.x + 302, a.y + 182);
+  ctx.arc(a.x + 294, a.y + 182, 8, 0, Math.PI);
+  ctx.stroke();
+  // Bongos under the table edge
+  for (const cx of [a.x + 120, a.x + 316]) {
+    const top = ly(cx) + 44;
+    ctx.fillStyle = '#d8b07a';
+    ctx.strokeStyle = INK;
+    ctx.lineWidth = 5;
+    ctx.beginPath();
+    ctx.moveTo(cx - 74, top);
+    ctx.lineTo(cx - 58, top + 112);
+    ctx.lineTo(cx + 58, top + 112);
+    ctx.lineTo(cx + 74, top);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = '#1e1c22';
+    ctx.fillRect(cx - 76, top - 6, 152, 14);
+    ctx.fillRect(cx - 60, top + 104, 120, 10);
+    ctx.fillStyle = '#efe0c4';
+    ctx.beginPath();
+    ctx.ellipse(cx, top - 6, 76, 20, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+  }
+  // Table edge
+  ctx.strokeStyle = INK;
+  ctx.lineWidth = 8;
+  ctx.beginPath();
+  ctx.moveTo(a.x, ly(a.x));
+  ctx.lineTo(a.x + a.w, ly(a.x + a.w));
+  ctx.stroke();
+  // Paws on the edge, pink pads
+  for (const x of [a.x + 130, a.x + 400]) {
+    const y = ly(x) - 14;
+    ctx.fillStyle = '#ffffff';
+    ctx.strokeStyle = INK;
+    ctx.lineWidth = 5;
+    ctx.beginPath();
+    ctx.ellipse(x, y, 36, 30, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = '#ff9aa8';
+    ctx.beginPath();
+    ctx.ellipse(x, y + 6, 11, 9, 0, 0, Math.PI * 2);
+    ctx.fill();
+    for (const dx of [-16, 0, 16]) {
+      ctx.beginPath();
+      ctx.arc(x + dx, y - 12, 5, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+}
+
+/** Ragged hole in the ceiling around the head, in art coordinates. */
+function ceilingHole(ctx: CanvasRenderingContext2D, head: Head) {
+  const s = head.s;
+  const pts = [
+    [-150, -80],
+    [-60, -112],
+    [40, -100],
+    [150, -118],
+    [168, 10],
+    [150, 96],
+    [30, 110],
+    [-80, 92],
+    [-140, 104],
+    [-162, 0],
+  ];
+  pts.forEach(([x, y], i) => {
+    const px = head.x + x * s;
+    const py = head.y + y * s;
+    if (i === 0) ctx.moveTo(px, py);
+    else ctx.lineTo(px, py);
+  });
+  ctx.closePath();
+}
+
+/** A white cat paw with its "thumb" toe raised. */
+function pawThumb(ctx: CanvasRenderingContext2D, x: number, y: number) {
+  ctx.fillStyle = '#f8f6f2';
+  ctx.strokeStyle = INK;
+  ctx.lineWidth = 5;
+  ctx.beginPath();
+  ctx.roundRect(x - 52, y - 10, 104, 140, 40);
+  ctx.fill();
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.roundRect(x - 50, y - 92, 40, 100, 20);
+  ctx.fill();
+  ctx.stroke();
+  ctx.strokeStyle = 'rgba(36,26,46,0.45)';
+  ctx.lineWidth = 3;
+  for (const dy of [24, 48]) {
+    ctx.beginPath();
+    ctx.moveTo(x - 6, y + dy);
+    ctx.lineTo(x + 46, y + dy);
+    ctx.stroke();
+  }
+}
+
+/** A yellow emoji fist pointing at the viewer. */
+function pointingHand(ctx: CanvasRenderingContext2D, x: number, y: number) {
+  ctx.fillStyle = '#ffcc33';
+  ctx.strokeStyle = '#a0701a';
+  ctx.lineWidth = 5;
+  ctx.beginPath();
+  ctx.roundRect(x - 70, y - 40, 100, 90, 30);
+  ctx.fill();
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.roundRect(x + 10, y - 34, 90, 30, 15);
+  ctx.fill();
+  ctx.stroke();
+  ctx.lineWidth = 3;
+  for (const dy of [8, 26]) {
+    ctx.beginPath();
+    ctx.moveTo(x - 30, y + dy);
+    ctx.lineTo(x + 24, y + dy);
+    ctx.stroke();
+  }
+}
+
+/** Red bell on a collar, hanging below the chin. */
+function collarBell(ctx: CanvasRenderingContext2D, x: number, y: number) {
+  ctx.strokeStyle = '#3a2a2a';
+  ctx.lineWidth = 6;
+  ctx.beginPath();
+  ctx.moveTo(x - 70, y - 10);
+  ctx.quadraticCurveTo(x, y + 12, x + 70, y - 10);
+  ctx.stroke();
+  ctx.fillStyle = '#d8302a';
+  ctx.strokeStyle = INK;
+  ctx.lineWidth = 4;
+  ctx.beginPath();
+  ctx.arc(x, y + 14, 16, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+  ctx.fillStyle = 'rgba(255,255,255,0.6)';
+  ctx.beginPath();
+  ctx.arc(x - 5, y + 9, 5, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+function chopsticks(ctx: CanvasRenderingContext2D, x: number, y: number) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(0.35);
+  ctx.strokeStyle = INK;
+  ctx.lineWidth = 3;
+  for (const dy of [-8, 8]) {
+    ctx.fillStyle = '#1e1c22';
+    ctx.fillRect(-20, dy - 4, 40, 8);
+    ctx.fillStyle = '#e8706a';
+    ctx.beginPath();
+    ctx.moveTo(20, dy - 4);
+    ctx.lineTo(140, dy - 1);
+    ctx.lineTo(140, dy + 1);
+    ctx.lineTo(20, dy + 4);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+  }
+  // Paw holding them
+  ctx.fillStyle = '#fbf6ee';
+  ctx.lineWidth = 5;
+  ctx.beginPath();
+  ctx.ellipse(-6, 0, 34, 24, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+  ctx.restore();
+}
+
+function brickWall(ctx: CanvasRenderingContext2D, a: ArtArea) {
+  solidBg(ctx, a, '#8a8a8e');
+  ctx.strokeStyle = 'rgba(40,40,46,0.55)';
+  ctx.lineWidth = 3;
+  for (let row = 0, y = a.y; y < a.y + a.h; row++, y += 36) {
+    ctx.beginPath();
+    ctx.moveTo(a.x, y);
+    ctx.lineTo(a.x + a.w, y);
+    ctx.stroke();
+    for (let x = a.x + (row % 2) * 40; x < a.x + a.w; x += 80) {
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+      ctx.lineTo(x, y + 36);
+      ctx.stroke();
+    }
+  }
+  ctx.strokeStyle = 'rgba(220, 60, 70, 0.75)';
+  ctx.lineWidth = 14;
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(a.x + 30, a.y + 60);
+  ctx.bezierCurveTo(a.x + 120, a.y + 20, a.x + 80, a.y + 160, a.x + 170, a.y + 110);
+  ctx.moveTo(a.x + a.w - 40, a.y + 40);
+  ctx.bezierCurveTo(a.x + a.w - 120, a.y + 140, a.x + a.w - 20, a.y + 200, a.x + a.w - 90, a.y + 280);
+  ctx.stroke();
+}
+
+function sunsetBeach(ctx: CanvasRenderingContext2D, a: ArtArea) {
+  const horizon = a.y + a.h * 0.5;
+  const sky = ctx.createLinearGradient(0, a.y, 0, horizon);
+  sky.addColorStop(0, '#7a9ab8');
+  sky.addColorStop(0.6, '#e8b890');
+  sky.addColorStop(1, '#f2a060');
+  ctx.fillStyle = sky;
+  ctx.fillRect(a.x, a.y, a.w, horizon - a.y);
+  const sea = ctx.createLinearGradient(0, horizon, 0, a.y + a.h);
+  sea.addColorStop(0, '#c8906a');
+  sea.addColorStop(0.5, '#7a6a68');
+  sea.addColorStop(1, '#5a4a44');
+  ctx.fillStyle = sea;
+  ctx.fillRect(a.x, horizon, a.w, a.y + a.h - horizon);
+  ctx.fillStyle = '#fff2c8';
+  ctx.beginPath();
+  ctx.arc(a.x + a.w * 0.72, horizon - 40, 22, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = 'rgba(255,230,170,0.5)';
+  for (let i = 0; i < 6; i++) ctx.fillRect(a.x + a.w * 0.72 - 24 + (i % 2) * 8, horizon + 6 + i * 12, 40 - i * 4, 4);
+}
+
+/** Banana / apple / corn costume around a kitten face, with little limbs poking out. */
+function fruitSuit(ctx: CanvasRenderingContext2D, head: Head, kind: 'banana' | 'apple' | 'corn') {
+  const { x, y } = head;
+  ctx.strokeStyle = INK;
+  ctx.lineWidth = 5;
+  ctx.lineJoin = 'round';
+  // Limbs first, so the suit covers their roots
+  ctx.fillStyle = '#d8c4a8';
+  for (const side of [-1, 1]) {
+    ctx.beginPath();
+    ctx.ellipse(x + side * 150, y + 60, 34, 18, side * 0.5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.roundRect(x + side * 50 - 18, y + 140, 36, 60, 14);
+    ctx.fill();
+    ctx.stroke();
+  }
+  if (kind === 'banana') {
+    ctx.fillStyle = '#f7d64a';
+    ctx.beginPath();
+    ctx.moveTo(x - 10, y - 175);
+    ctx.bezierCurveTo(x - 160, y - 120, x - 170, y + 120, x - 30, y + 170);
+    ctx.lineTo(x + 60, y + 165);
+    ctx.bezierCurveTo(x + 160, y + 100, x + 150, y - 110, x + 20, y - 175);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = '#8a6420';
+    for (const [dx, dy, r] of [
+      [-90, 40, 10],
+      [70, 110, 14],
+      [-40, 140, 8],
+      [100, -60, 7],
+    ]) {
+      ctx.beginPath();
+      ctx.arc(x + dx, y + dy, r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.fillStyle = '#6b4a22';
+    ctx.beginPath();
+    ctx.roundRect(x - 14, y - 225, 28, 56, 6);
+    ctx.fill();
+    ctx.stroke();
+  } else if (kind === 'apple') {
+    ctx.fillStyle = '#d8302a';
+    ctx.beginPath();
+    ctx.moveTo(x, y - 130);
+    ctx.bezierCurveTo(x - 140, y - 200, x - 210, y - 20, x - 140, y + 100);
+    ctx.bezierCurveTo(x - 80, y + 180, x + 80, y + 180, x + 140, y + 100);
+    ctx.bezierCurveTo(x + 210, y - 20, x + 140, y - 200, x, y - 130);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = 'rgba(255,255,255,0.3)';
+    ctx.beginPath();
+    ctx.ellipse(x - 100, y - 70, 22, 40, 0.4, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#6b4a22';
+    ctx.fillRect(x - 7, y - 190, 14, 64);
+    ctx.strokeRect(x - 7, y - 190, 14, 64);
+    ctx.fillStyle = '#5ab832';
+    ctx.beginPath();
+    ctx.ellipse(x + 38, y - 172, 38, 16, -0.4, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+  } else {
+    // Husk leaves behind, then the cob
+    ctx.fillStyle = '#4aa83a';
+    for (const side of [-1, 1]) {
+      for (const [dx, h] of [
+        [70, 330],
+        [110, 260],
+      ]) {
+        ctx.beginPath();
+        ctx.moveTo(x + side * 20, y + 190);
+        ctx.quadraticCurveTo(x + side * (dx + 40), y + 40, x + side * (dx - 20), y + 190 - h);
+        ctx.quadraticCurveTo(x + side * (dx - 40), y + 60, x + side * 10, y + 190);
+        ctx.fill();
+        ctx.stroke();
+      }
+    }
+    ctx.fillStyle = '#f6c030';
+    ctx.beginPath();
+    ctx.ellipse(x, y - 20, 105, 210, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = '#e09a1a';
+    for (let row = -8; row <= 8; row++) {
+      const half = 95 * Math.sqrt(1 - Math.pow((row * 22) / 210, 2));
+      for (let col = -half; col <= half; col += 22) {
+        ctx.beginPath();
+        ctx.ellipse(x + col, y - 20 + row * 22, 8, 9, 0, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+    ctx.fillStyle = '#5ab832';
+    for (const side of [-1, 1]) {
+      ctx.beginPath();
+      ctx.moveTo(x + side * 5, y + 200);
+      ctx.quadraticCurveTo(x + side * 120, y + 120, x + side * 90, y - 40);
+      ctx.quadraticCurveTo(x + side * 70, y + 100, x + side * 5, y + 200);
+      ctx.fill();
+      ctx.stroke();
+    }
+  }
 }

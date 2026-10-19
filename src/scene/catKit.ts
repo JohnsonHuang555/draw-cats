@@ -40,9 +40,11 @@ export type Mouth =
   | 'polite'
   | 'huge'
   | 'blep'
+  /** A huge round open mouth (Pop Cat). */
+  | 'pop'
   /** Jaw dropped a little, two small fangs: a bewildered "huh?". */
   | 'gasp';
-export type Pose = 'sit' | 'loaf' | 'stand' | 'chonk';
+export type Pose = 'sit' | 'loaf' | 'stand' | 'chonk' | 'quad';
 export type Paint = string | CanvasGradient;
 export type Draw = (ctx: CanvasRenderingContext2D) => void;
 export type Head = { x: number; y: number; s: number };
@@ -71,6 +73,16 @@ export interface CatSpec {
   spiky?: boolean;
   blush?: boolean;
   tuxedo?: boolean;
+  /** Vertical slit pupils (wide eyes only). */
+  slit?: boolean;
+  /** Large round pupils (wide eyes only): the soft, dark-eyed look. */
+  bigPupil?: boolean;
+  /** Chest/belly colour when it differs from the face (e.g. black cat, white chest). */
+  belly?: string;
+  /** Colour of the paw tips (quad pose). */
+  paws?: string;
+  /** Skip the built-in cat entirely; `back`/`front` draw everything. */
+  noCat?: boolean;
   mask?: string;
   muzzle?: string;
   pose?: Pose;
@@ -96,12 +108,14 @@ export function drawCat(ctx: CanvasRenderingContext2D, spec: CatSpec, a: ArtArea
 
   ctx.save();
   spec.back?.(ctx, a, head);
-  ctx.globalAlpha = spec.alpha ?? 1;
-  if (spec.pose) drawBody(ctx, head, spec);
-  ctx.translate(head.x, head.y);
-  ctx.rotate(spec.tilt ?? 0);
-  ctx.scale(s, s);
-  drawHead(ctx, spec);
+  if (!spec.noCat) {
+    ctx.globalAlpha = spec.alpha ?? 1;
+    if (spec.pose) drawBody(ctx, head, spec);
+    ctx.translate(head.x, head.y);
+    ctx.rotate(spec.tilt ?? 0);
+    ctx.scale(s, s);
+    drawHead(ctx, spec);
+  }
   ctx.restore();
 
   ctx.save();
@@ -178,9 +192,38 @@ export function drawBody(ctx: CanvasRenderingContext2D, head: Head, spec: CatSpe
   ctx.fillStyle = furFill(ctx, spec);
   ctx.strokeStyle = INK;
   ctx.lineWidth = 6;
-  const belly = spec.tuxedo ? '#ffffff' : spec.muzzle;
+  const belly = spec.belly ?? (spec.tuxedo ? '#ffffff' : spec.muzzle);
 
-  if (spec.pose === 'chonk') {
+  if (spec.pose === 'quad') {
+    // Standing on all fours, facing the viewer: rump behind, front legs straight down
+    ctx.beginPath();
+    ctx.ellipse(-30, 70, 170, 105, -0.08, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    for (const [x, top, h] of [
+      [-150, 110, 120],
+      [80, 120, 110],
+      [-58, 70, 190],
+      [52, 70, 190],
+    ]) {
+      ctx.fillStyle = furFill(ctx, spec);
+      ctx.beginPath();
+      ctx.roundRect(x - 26, top, 52, h, 24);
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = spec.paws ?? furFill(ctx, spec);
+      ctx.beginPath();
+      ctx.ellipse(x, top + h - 6, 27, 16, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+    }
+    if (belly) {
+      ctx.fillStyle = belly;
+      ctx.beginPath();
+      ctx.ellipse(0, 110, 48, 50, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  } else if (spec.pose === 'chonk') {
     // Very round, pear-shaped body under a small head
     ctx.beginPath();
     ctx.moveTo(-70, 40);
@@ -492,21 +535,23 @@ export function drawEye(ctx: CanvasRenderingContext2D, x: number, y: number, sid
       ctx.arc(x - 3, y - 3, 3, 0, Math.PI * 2);
       ctx.fill();
       return;
-    case 'wide':
+    case 'wide': {
+      const iris = side > 0 && spec.iris2 ? spec.iris2 : spec.iris;
       ctx.fillStyle = '#ffffff';
       ctx.beginPath();
       ctx.arc(x, y, 28, 0, Math.PI * 2);
       ctx.fill();
-      if (spec.iris) {
-        ctx.fillStyle = spec.iris;
+      if (iris) {
+        ctx.fillStyle = iris;
         ctx.beginPath();
-        ctx.arc(x, y, 20, 0, Math.PI * 2);
+        ctx.arc(x, y, 22, 0, Math.PI * 2);
         ctx.fill();
       }
       ctx.stroke();
       ctx.fillStyle = INK;
       ctx.beginPath();
-      ctx.arc(x, y, spec.iris ? 7 : 8, 0, Math.PI * 2);
+      if (spec.slit) ctx.ellipse(x, y, 5, 18, 0, 0, Math.PI * 2);
+      else ctx.arc(x, y, iris ? (spec.bigPupil ? 14 : 7) : 8, 0, Math.PI * 2);
       ctx.fill();
       if (spec.iris) {
         ctx.fillStyle = '#ffffff';
@@ -515,6 +560,7 @@ export function drawEye(ctx: CanvasRenderingContext2D, x: number, y: number, sid
         ctx.fill();
       }
       return;
+    }
     case 'laser':
       ctx.fillStyle = 'rgba(255, 40, 40, 0.3)';
       ctx.beginPath();
@@ -722,6 +768,18 @@ export function drawMouth(ctx: CanvasRenderingContext2D, mouth: Mouth, darkFur?:
       ctx.ellipse(0, 48, 10, 13, 0, 0, Math.PI * 2);
       ctx.fill();
       ctx.stroke();
+      return;
+    case 'pop':
+      // Pop Cat: the whole lower face becomes one round open mouth
+      ctx.fillStyle = '#7a2030';
+      ctx.beginPath();
+      ctx.ellipse(0, 52, 52, 48, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = '#d85a70';
+      ctx.beginPath();
+      ctx.ellipse(0, 76, 34, 20, 0, 0, Math.PI * 2);
+      ctx.fill();
       return;
     case 'gasp':
       ctx.fillStyle = '#5a1424';

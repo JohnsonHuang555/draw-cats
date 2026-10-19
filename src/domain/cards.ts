@@ -98,7 +98,7 @@ export const MEME_CATS: MemeCat[] = [
   meme('n-eyeroll', '翻白眼吐舌貓', '……', 'N', 260),
   meme('n-loki', 'Office Cat Loki', '辦公貓・加班中', 'N', 210),
   meme('n-service', '客服貓', '您好，很高興為您服務', 'N', 130),
-  meme('n-clip', '夾子貓', '說話好可愛', 'N', 20),
+  meme('n-clip', '筷子貓', '您好，我吃一點', 'N', 20),
   meme('n-laundry', 'Laundry Cat', '洗衣貓・晾衣服中', 'N', 190),
   meme('n-luna', 'Luna', '吃東西貓・嚼嚼嚼', 'N', 30),
   meme('n-cowdance', '跳舞奶牛貓', '扭來扭去', 'N', 180),
