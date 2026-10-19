@@ -31,6 +31,7 @@ export class AlbumView {
       <header class="album-head">
         <button class="icon-btn album-close" aria-label="關閉卡冊">✕</button>
         <h2>卡冊</h2>
+        <span class="album-preview-tag">開發者預覽</span>
       </header>
       <nav class="album-tabs">
         <button data-tab="meme">迷因貓 <span></span></button>
@@ -78,7 +79,10 @@ export class AlbumView {
     );
   }
 
-  show(memes: AlbumSlot[], generated: AlbumSlot[]) {
+  /** `preview` marks a dev view where every Meme Cat is shown unlocked. */
+  show(memes: AlbumSlot[], generated: AlbumSlot[], preview = false) {
+    this.el.classList.toggle('preview', preview);
+    if (preview) this.tab = 'meme';
     this.memes = memes;
     this.generated = generated;
     const ownedMemes = memes.filter((s) => s.count > 0).length;

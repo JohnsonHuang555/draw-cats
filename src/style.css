@@ -492,6 +492,19 @@ body {
   letter-spacing: 0.3em;
 }
 
+.album-preview-tag {
+  display: none;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: #ff5fa2;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.album.preview .album-preview-tag {
+  display: inline-block;
+}
+
 .album-tabs,
 .album-filters {
   display: flex;

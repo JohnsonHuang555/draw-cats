@@ -35,6 +35,7 @@ export class Overlay {
   onOpenAlbum?: () => void;
   onClearAlbum?: () => void;
   onAddFish?: () => void;
+  onPreviewMemes?: () => void;
   readonly album = new AlbumView();
 
   private home = el('section', 'home panel');
@@ -133,11 +134,16 @@ export class Overlay {
         <label><input type="checkbox" data-dev="forceSSR" /> 強制 SSR</label>
         <label><input type="checkbox" data-dev="forceFakeOut" /> 強制 Fake-out</label>
         <button class="dev-fish">+10000 小魚乾</button>
+        <button class="dev-fish dev-preview">預覽全部迷因貓</button>
         <button class="dev-clear">清空卡冊</button>
       `;
       panel
         .querySelector('.dev-fish')!
         .addEventListener('click', () => this.onAddFish?.());
+      panel.querySelector('.dev-preview')!.addEventListener('click', () => {
+        panel.classList.remove('open');
+        this.onPreviewMemes?.();
+      });
       panel.querySelector('.dev-clear')!.addEventListener('click', () => {
         if (window.confirm('確定要清空卡冊嗎？')) this.onClearAlbum?.();
       });

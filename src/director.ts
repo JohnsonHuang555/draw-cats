@@ -84,6 +84,7 @@ export class Director {
   private readonly tapLimiter = new TapLimiter();
   private tapCapNoticed = false;
   private modeBeforeAlbum: Mode = 'idle';
+  private albumPreview = false;
 
   constructor(
     private stage: Stage,
@@ -119,6 +120,7 @@ export class Director {
     };
     overlay.onMute = (muted) => sfx.setMuted(muted);
     overlay.onOpenAlbum = () => this.openAlbum();
+    overlay.onPreviewMemes = () => this.openAlbum(true);
     overlay.album.onClose = () => this.closeAlbum();
     overlay.album.onCard = (card) => this.inspectAlbumCard(card);
     overlay.onClearAlbum = () => {
@@ -649,8 +651,14 @@ export class Director {
 
   // ---------------------------------------------------------------- album
 
-  private openAlbum() {
-    if (this.mode === 'album' || this.mode === 'albumInspect') return;
+  /** `preview`: dev view with every Meme Cat unlocked; the real Album is untouched. */
+  private openAlbum(preview = false) {
+    if (this.mode === 'albumInspect') return;
+    this.albumPreview = preview;
+    if (this.mode === 'album') {
+      this.refreshAlbum();
+      return;
+    }
     this.sfx.unlock();
     this.sfx.click();
     if (this.inspecting) this.uninspect();
@@ -664,7 +672,9 @@ export class Director {
 
   private refreshAlbum() {
     const album = this.albumStore.album;
-    this.overlay.album.show(memeSlots(album), generatedSlots(album));
+    const memes = memeSlots(album);
+    const shown = this.albumPreview ? memes.map((s) => ({ ...s, count: Math.max(1, s.count) })) : memes;
+    this.overlay.album.show(shown, generatedSlots(album), this.albumPreview);
   }
 
   private closeAlbum() {
@@ -691,6 +701,8 @@ export class Director {
     gsap.to(view.root.scale, { x: pose.scale, y: pose.scale, z: pose.scale, duration: 0.5, ease: 'back.out(1.4)' });
     gsap.to(this.dimmer.material, { opacity: 0.85, duration: 0.3 });
     this.overlay.showTraits(card);
+    // The home Pack sits behind the inspected card; hide it so it does not show through the dimmer.
+    if (this.pack) this.pack.root.visible = false;
     this.albumCard = view;
     this.mode = 'albumInspect';
   }
@@ -699,6 +711,7 @@ export class Director {
     const view = this.albumCard!;
     this.albumCard = null;
     this.mode = 'album';
+    if (this.pack) this.pack.root.visible = true;
     this.overlay.showTraits(null);
     gsap.to(this.dimmer.material, { opacity: 0, duration: 0.3 });
     gsap.to(view.root.scale, {
