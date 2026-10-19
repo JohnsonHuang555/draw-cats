@@ -37,8 +37,8 @@ export class Overlay {
   constructor(root: HTMLElement, muted: boolean, showDev: boolean) {
     this.home.innerHTML = `
       <header>
-        <h1 class="title">星辰抽卡</h1>
-        <p class="subtitle">撕開卡包，看看星星為你帶來了什麼</p>
+        <h1 class="title">喵喵抽卡</h1>
+        <p class="subtitle">撕開卡包，看看哪隻迷因貓來找你</p>
       </header>
       <footer>
         <div class="actions">

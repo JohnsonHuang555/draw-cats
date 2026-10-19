@@ -3,35 +3,34 @@ import type { Rarity } from './rarity';
 export interface Card {
   id: string;
   name: string;
+  /** The meme's catchphrase or origin, shown under the name. */
   title: string;
   rarity: Rarity;
-  /** Base hue (0-360) for the placeholder art. */
+  /** Base hue (0-360) for the art background. */
   hue: number;
-  /** Glyph drawn at the centre of the placeholder art. */
-  glyph: string;
 }
 
 export const CARD_POOL: Card[] = [
-  { id: 'n-slime', name: '史萊姆', title: '黏呼呼的旅伴', rarity: 'N', hue: 140, glyph: '◉' },
-  { id: 'n-rat', name: '倉庫鼠', title: '偷吃起司的慣犯', rarity: 'N', hue: 30, glyph: '◆' },
-  { id: 'n-bat', name: '洞穴蝙蝠', title: '倒掛的觀察者', rarity: 'N', hue: 270, glyph: '▼' },
-  { id: 'n-mushroom', name: '跳跳菇', title: '森林地面的居民', rarity: 'N', hue: 0, glyph: '♣' },
-  { id: 'n-crab', name: '沙灘蟹', title: '橫著走的哨兵', rarity: 'N', hue: 15, glyph: '✦' },
-  { id: 'n-wisp', name: '小燭火', title: '迷途的火光', rarity: 'N', hue: 45, glyph: '✧' },
-  { id: 'n-golem', name: '石塊人偶', title: '笨重的守門者', rarity: 'N', hue: 200, glyph: '■' },
-  { id: 'n-frog', name: '雨蛙', title: '下雨天的歌手', rarity: 'N', hue: 110, glyph: '●' },
-  { id: 'r-knight', name: '見習騎士', title: '盾比人還大', rarity: 'R', hue: 210, glyph: '⛨' },
-  { id: 'r-archer', name: '林間射手', title: '百步穿楊', rarity: 'R', hue: 160, glyph: '➶' },
-  { id: 'r-alchemist', name: '鍊金學徒', title: '炸過三次實驗室', rarity: 'R', hue: 290, glyph: '⚗' },
-  { id: 'r-bard', name: '流浪詩人', title: '歌聲能讓狼停步', rarity: 'R', hue: 330, glyph: '♪' },
-  { id: 'r-monk', name: '山門武僧', title: '一拳碎石', rarity: 'R', hue: 25, glyph: '☯' },
-  { id: 'r-thief', name: '夜行盜賊', title: '影子裡的笑聲', rarity: 'R', hue: 250, glyph: '☾' },
-  { id: 'sr-dragoon', name: '蒼龍騎士', title: '與飛龍締約之人', rarity: 'SR', hue: 220, glyph: '✠' },
-  { id: 'sr-oracle', name: '月影神諭', title: '看見三日後的雨', rarity: 'SR', hue: 280, glyph: '☽' },
-  { id: 'sr-forge', name: '熔爐巨匠', title: '鍛造星鐵之手', rarity: 'SR', hue: 10, glyph: '⚒' },
-  { id: 'sr-tide', name: '潮汐歌姬', title: '海浪為她伴奏', rarity: 'SR', hue: 190, glyph: '❂' },
-  { id: 'ssr-starfall', name: '星落魔女', title: '將流星摘入掌心', rarity: 'SSR', hue: 260, glyph: '✶' },
-  { id: 'ssr-sunking', name: '曜日之王', title: '黎明由他宣告', rarity: 'SSR', hue: 42, glyph: '☀' },
+  { id: 'n-banana', name: '香蕉貓', title: '嗚嗚嗚嗚嗚', rarity: 'N', hue: 50 },
+  { id: 'n-crying', name: '哭哭貓', title: '眼眶泛淚的那一刻', rarity: 'N', hue: 210 },
+  { id: 'n-polite', name: '禮貌貓', title: '不好意思打擾了', rarity: 'N', hue: 330 },
+  { id: 'n-huh', name: '蛤貓', title: '蛤？', rarity: 'N', hue: 180 },
+  { id: 'n-bingus', name: '賓格斯', title: '沒毛也很可愛', rarity: 'N', hue: 15 },
+  { id: 'n-chipi', name: '奇比奇比貓', title: 'Chipi Chipi Chapa Chapa', rarity: 'N', hue: 290 },
+  { id: 'n-ceiling', name: '天花板貓', title: '一直在看著你', rarity: 'N', hue: 30 },
+  { id: 'n-shocked', name: '驚嚇貓', title: '嚇到毛都豎起來', rarity: 'N', hue: 120 },
+  { id: 'r-bongo', name: '拍桌貓', title: '什麼都能打成鼓', rarity: 'R', hue: 200 },
+  { id: 'r-pop', name: '啵啵貓', title: '啵！', rarity: 'R', hue: 340 },
+  { id: 'r-vibing', name: '點頭貓', title: '節奏感滿分', rarity: 'R', hue: 260 },
+  { id: 'r-longcat', name: '長貓', title: '長～～～～～貓', rarity: 'R', hue: 150 },
+  { id: 'r-maxwell', name: '麥克斯韋', title: '慢慢地轉圈圈', rarity: 'R', hue: 230 },
+  { id: 'r-happy', name: '哈皮貓', title: 'Happy Happy Happy～', rarity: 'R', hue: 45 },
+  { id: 'sr-keyboard', name: '鍵盤貓', title: '演奏完畢，請下台', rarity: 'SR', hue: 220 },
+  { id: 'sr-smudge', name: '沙拉貓', title: '我又沒吃你的沙拉', rarity: 'SR', hue: 100 },
+  { id: 'sr-oiia', name: '歐伊亞旋轉貓', title: 'OIIA OIIA 轉不停', rarity: 'SR', hue: 280 },
+  { id: 'sr-floppa', name: '大佛洛帕', title: '浴缸裡的大人物', rarity: 'SR', hue: 25 },
+  { id: 'ssr-nyan', name: '彩虹貓', title: '拖著彩虹飛越宇宙', rarity: 'SSR', hue: 235 },
+  { id: 'ssr-grumpy', name: '不爽貓', title: '我不要。', rarity: 'SSR', hue: 0 },
 ];
 
 export function cardsOf(rarity: Rarity): Card[] {

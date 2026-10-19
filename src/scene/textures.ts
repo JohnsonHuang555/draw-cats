@@ -1,6 +1,7 @@
 import { CanvasTexture, SRGBColorSpace, type Texture } from 'three';
 import type { Card } from '../domain/cards';
 import type { Rarity } from '../domain/rarity';
+import { drawCatArt } from './catArt';
 
 const FONT = '"Noto Sans TC", "Microsoft JhengHei", "PingFang TC", sans-serif';
 export const CARD_TEX_W = 512;
@@ -113,37 +114,24 @@ export function cardFrontTexture(card: Card): Texture {
   }
   ctx.globalAlpha = 1;
 
-  // Halo + glyph
-  const halo = ctx.createRadialGradient(cx, cy, 10, cx, cy, 190);
-  halo.addColorStop(0, 'rgba(255,255,255,0.75)');
-  halo.addColorStop(0.4, `hsla(${card.hue}, 100%, 75%, 0.35)`);
+  // Soft halo behind the cat
+  const halo = ctx.createRadialGradient(cx, cy, 10, cx, cy, 220);
+  halo.addColorStop(0, 'rgba(255,255,255,0.35)');
+  halo.addColorStop(0.5, `hsla(${card.hue}, 100%, 75%, 0.15)`);
   halo.addColorStop(1, 'rgba(0,0,0,0)');
   ctx.fillStyle = halo;
   ctx.fillRect(artX, artY, artW, artH);
-  ctx.font = `200px ${FONT}`;
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.shadowColor = `hsl(${card.hue}, 100%, 70%)`;
-  ctx.shadowBlur = 40;
-  ctx.fillStyle = '#ffffff';
-  ctx.fillText(card.glyph, cx, cy + 6);
-  ctx.shadowBlur = 0;
-
-  // Ground silhouette
-  ctx.fillStyle = `hsla(${card.hue}, 60%, 8%, 0.85)`;
-  ctx.beginPath();
-  ctx.moveTo(artX, artY + artH);
-  for (let x = 0; x <= artW; x += 32) {
-    ctx.lineTo(artX + x, artY + artH - 40 - rand() * 50);
-  }
-  ctx.lineTo(artX + artW, artY + artH);
-  ctx.fill();
+  const area = { x: artX, y: artY, w: artW, h: artH };
+  drawCatArt(ctx, card.id, area);
   ctx.restore();
 
-  ctx.strokeStyle = frameB;
-  ctx.lineWidth = 4;
-  roundRect(ctx, artX, artY, artW, artH, 14);
-  ctx.stroke();
+  const strokeArtBorder = () => {
+    ctx.strokeStyle = frameB;
+    ctx.lineWidth = 4;
+    roundRect(ctx, artX, artY, artW, artH, 14);
+    ctx.stroke();
+  };
+  strokeArtBorder();
 
   // Header: rarity badge + stars
   ctx.textAlign = 'left';
@@ -178,8 +166,38 @@ export function cardFrontTexture(card: Card): Texture {
 
   const tex = toTexture(canvas);
   frontCache.set(card.id, tex);
+
+  // A real image dropped into src/assets/cards/ replaces the cartoon once it loads.
+  const customUrl = CUSTOM_ART.get(card.id);
+  if (customUrl) {
+    const img = new Image();
+    img.onload = () => {
+      ctx.save();
+      roundRect(ctx, area.x, area.y, area.w, area.h, 14);
+      ctx.clip();
+      const scale = Math.max(area.w / img.width, area.h / img.height);
+      const w = img.width * scale;
+      const h = img.height * scale;
+      ctx.drawImage(img, area.x + (area.w - w) / 2, area.y + (area.h - h) / 2, w, h);
+      ctx.restore();
+      strokeArtBorder();
+      tex.needsUpdate = true;
+    };
+    img.src = customUrl;
+  }
   return tex;
 }
+
+/** Card id → URL of a custom image in src/assets/cards/, resolved at build time. */
+const CUSTOM_ART = new Map(
+  Object.entries(
+    import.meta.glob('../assets/cards/*.{png,jpg,jpeg,webp,gif}', {
+      eager: true,
+      query: '?url',
+      import: 'default',
+    }) as Record<string, string>,
+  ).map(([path, url]) => [path.split('/').pop()!.replace(/\.\w+$/, ''), url]),
+);
 
 let backTex: Texture | undefined;
 
@@ -229,21 +247,40 @@ export function cardBackTexture(): Texture {
   ctx.strokeStyle = '#f3d283';
   ctx.lineWidth = 4;
   ctx.stroke();
-  drawStar(ctx, cx, cy, 8, 92, 30);
   ctx.fillStyle = '#f3d283';
-  ctx.fill();
+  drawPaw(ctx, cx, cy + 8, 1.15);
 
   backTex = toTexture(canvas);
   return backTex;
 }
 
-function drawStar(ctx: CanvasRenderingContext2D, cx: number, cy: number, points: number, outer: number, inner: number) {
+/** Cat paw print, filled with the current fillStyle. ~140px tall at scale 1. */
+function drawPaw(ctx: CanvasRenderingContext2D, cx: number, cy: number, s: number) {
   ctx.beginPath();
-  for (let i = 0; i < points * 2; i++) {
-    const r = i % 2 === 0 ? outer : inner;
-    const a = (i / (points * 2)) * Math.PI * 2 - Math.PI / 2;
-    ctx.lineTo(cx + Math.cos(a) * r, cy + Math.sin(a) * r);
+  ctx.ellipse(cx, cy + 22 * s, 42 * s, 36 * s, 0, 0, Math.PI * 2);
+  ctx.fill();
+  for (const [dx, dy, r] of [
+    [-50, -22, 17],
+    [-19, -50, 18],
+    [19, -50, 18],
+    [50, -22, 17],
+  ]) {
+    ctx.beginPath();
+    ctx.ellipse(cx + dx * s, cy + dy * s, r * s, r * 1.2 * s, dx * 0.006, 0, Math.PI * 2);
+    ctx.fill();
   }
+}
+
+/** Cat head silhouette with ears, filled with the current fillStyle. */
+function catHeadPath(ctx: CanvasRenderingContext2D, cx: number, cy: number, s: number) {
+  ctx.beginPath();
+  ctx.moveTo(cx - 108 * s, cy - 10 * s);
+  ctx.lineTo(cx - 95 * s, cy - 125 * s);
+  ctx.lineTo(cx - 40 * s, cy - 78 * s);
+  ctx.quadraticCurveTo(cx, cy - 90 * s, cx + 40 * s, cy - 78 * s);
+  ctx.lineTo(cx + 95 * s, cy - 125 * s);
+  ctx.lineTo(cx + 108 * s, cy - 10 * s);
+  ctx.bezierCurveTo(cx + 120 * s, cy + 90 * s, cx - 120 * s, cy + 90 * s, cx - 108 * s, cy - 10 * s);
   ctx.closePath();
 }
 
@@ -322,13 +359,50 @@ export function packTexture(): Texture {
   halo.addColorStop(1, 'rgba(0,0,0,0)');
   ctx.fillStyle = halo;
   ctx.fillRect(0, 0, W, H);
-  drawStar(ctx, cx, cy, 8, 120, 40);
-  const starGrad = ctx.createLinearGradient(cx - 120, cy - 120, cx + 120, cy + 120);
-  starGrad.addColorStop(0, '#fff3c4');
-  starGrad.addColorStop(0.5, '#e0a93a');
-  starGrad.addColorStop(1, '#fff3c4');
-  ctx.fillStyle = starGrad;
+  // Scattered paw prints
+  ctx.fillStyle = 'rgba(255, 243, 196, 0.12)';
+  for (const [px, py, ps, rot] of [
+    [90, 210, 0.45, -0.4],
+    [420, 260, 0.38, 0.3],
+    [70, 520, 0.4, 0.5],
+    [440, 640, 0.45, -0.3],
+    [130, 700, 0.3, 0.2],
+  ]) {
+    ctx.save();
+    ctx.translate(px, py);
+    ctx.rotate(rot);
+    drawPaw(ctx, 0, 0, ps);
+    ctx.restore();
+  }
+
+  // Cat head emblem
+  catHeadPath(ctx, cx, cy, 1.15);
+  const headGrad = ctx.createLinearGradient(cx - 120, cy - 140, cx + 120, cy + 100);
+  headGrad.addColorStop(0, '#fff3c4');
+  headGrad.addColorStop(0.5, '#e0a93a');
+  headGrad.addColorStop(1, '#fff3c4');
+  ctx.fillStyle = headGrad;
   ctx.fill();
+  ctx.fillStyle = '#1a1240';
+  for (const side of [-1, 1]) {
+    ctx.beginPath();
+    ctx.ellipse(cx + side * 42, cy - 8, 13, 20, 0, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.beginPath();
+  ctx.moveTo(cx - 10, cy + 22);
+  ctx.lineTo(cx + 10, cy + 22);
+  ctx.lineTo(cx, cy + 33);
+  ctx.closePath();
+  ctx.fill();
+  ctx.strokeStyle = '#1a1240';
+  ctx.lineWidth = 5;
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.arc(cx - 10, cy + 36, 10, 0, Math.PI);
+  ctx.moveTo(cx + 20, cy + 36);
+  ctx.arc(cx + 10, cy + 36, 10, 0, Math.PI);
+  ctx.stroke();
 
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
@@ -336,11 +410,11 @@ export function packTexture(): Texture {
   ctx.font = `900 64px ${FONT}`;
   ctx.shadowColor = '#e0a93a';
   ctx.shadowBlur = 24;
-  ctx.fillText('星辰卡包', cx, H * 0.76);
+  ctx.fillText('喵喵卡包', cx, H * 0.76);
   ctx.shadowBlur = 0;
   ctx.font = `600 22px ${FONT}`;
   ctx.fillStyle = 'rgba(255,243,196,0.7)';
-  ctx.fillText('STARFALL  BOOSTER', cx, H * 0.83);
+  ctx.fillText('MEME  CAT  BOOSTER', cx, H * 0.83);
   ctx.restore();
 
   packTex = toTexture(canvas);

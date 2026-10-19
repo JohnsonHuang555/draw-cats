@@ -99,7 +99,45 @@ export class Sfx {
     if (rarity === 'SSR' || rarity === 'SR') {
       this.tone(rarity === 'SSR' ? 50 : 70, 1.4, { type: 'sine', gain: 0.6, slideTo: 30 });
       this.noise(1.2, { from: 8000, to: 2000, q: 0.5, gain: 0.2 });
+      this.meow(rarity === 'SSR' ? 1.15 : 1, 0.25);
+      if (rarity === 'SSR') this.meow(1.4, 0.85);
     }
+  }
+
+  /** Synthesised meow: a pitch rise-and-fall through a moving vowel formant. */
+  meow(pitch = 1, delay = 0) {
+    if (!this.ctx || !this.master) return;
+    const t = this.ctx.currentTime + delay;
+    const dur = 0.55;
+    const osc = this.ctx.createOscillator();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(420 * pitch, t);
+    osc.frequency.exponentialRampToValueAtTime(780 * pitch, t + 0.14);
+    osc.frequency.exponentialRampToValueAtTime(520 * pitch, t + dur);
+    const vibrato = this.ctx.createOscillator();
+    const vibratoGain = this.ctx.createGain();
+    vibrato.frequency.value = 7;
+    vibratoGain.gain.value = 12 * pitch;
+    vibrato.connect(vibratoGain).connect(osc.frequency);
+
+    // "m" → "ee" → "ow": the formant opens up then closes.
+    const formant = this.ctx.createBiquadFilter();
+    formant.type = 'bandpass';
+    formant.Q.value = 3;
+    formant.frequency.setValueAtTime(700, t);
+    formant.frequency.exponentialRampToValueAtTime(2200, t + 0.15);
+    formant.frequency.exponentialRampToValueAtTime(900, t + dur);
+
+    const g = this.ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.5, t + 0.06);
+    g.gain.setValueAtTime(0.5, t + dur * 0.6);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    osc.connect(formant).connect(g).connect(this.master);
+    osc.start(t);
+    vibrato.start(t);
+    osc.stop(t + dur + 0.05);
+    vibrato.stop(t + dur + 0.05);
   }
 
   private tone(

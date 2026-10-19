@@ -64,10 +64,12 @@ const fragmentShader = /* glsl */ `
       vec3 rainbow = hsv2rgb(vec3(fract(band), 0.6, 1.0));
       float stripes = 0.55 + 0.45 * sin((vUv.x - vUv.y * 0.7) * 38.0 + tilt.x * 7.0 + tilt.y * 4.0);
       col = mix(col, col * 0.6 + rainbow * (0.22 + luma * 0.4), foil * 0.6 * mask * stripes);
+      // Light art (e.g. white cats) must not cross the bloom threshold and wash out.
+      col = min(col, vec3(0.8));
 
       vec2 glarePos = vec2(0.5) + vec2(tilt.x, -tilt.y) * 0.75;
       float glare = exp(-pow(distance(vUv * vec2(1.0, 1.4), glarePos * vec2(1.0, 1.4)) * 2.6, 2.0));
-      col += glare * foil * 0.32;
+      col += glare * foil * 0.32 * (1.0 - luma * 0.75);
 
       // Glitter: a four-point star in a few random grid cells, twinkling as the card tilts.
       vec2 grid = vUv * vec2(30.0, 42.0);

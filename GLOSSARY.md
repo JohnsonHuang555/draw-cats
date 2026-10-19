@@ -1,6 +1,6 @@
 # Draw Card Game
 
-A web pull simulator built around physical card packs. The core experience is the pull animation: tearing open a **Pack** and flipping the **Cards** one by one to reveal their **Rarity**.
+A web pull simulator built around physical card packs, where every Card is a meme cat. The core experience is the pull animation: tearing open a **Pack** and flipping the **Cards** one by one to reveal their **Rarity**.
 
 ## Language
 
@@ -31,8 +31,8 @@ _Avoid_: pity (pity is a separate concept that spans multiple **Pulls**; it is n
 ### Cards & rarity
 
 **Card**:
-An entry in the **Card Pool**, with a unique name, art, and exactly one **Rarity**.
-_Avoid_: character, unit
+An entry in the **Card Pool**: one meme cat, with a unique name, catchphrase, art, and exactly one **Rarity**.
+_Avoid_: character, unit, cat (as a game term)
 
 **Copy**:
 One instance of a **Card** that the player gets from a **Pull**. The same **Card** can have multiple **Copies**.
