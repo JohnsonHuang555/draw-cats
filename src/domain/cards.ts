@@ -41,7 +41,7 @@ export const MEME_CATS: MemeCat[] = [
   meme('sr-happy', 'Happy 貓', 'Happy Happy Happy～', 'SR', 45),
   meme('sr-pop', 'Pop 貓', '啵！', 'SR', 340),
   meme('r-huh', 'Huh 貓', '蛤？', 'R', 180),
-  meme('r-maxwell', '臭貓', '慢慢地轉圈圈', 'R', 230),
+  meme('r-maxwell', 'Maxwell 貓', '慢慢地轉圈圈', 'R', 230),
   meme('r-smudge', '沙拉貓', '我又沒吃你的沙拉', 'R', 100),
   meme('r-keyboard', '鍵盤貓', '演奏完畢，請下台', 'R', 220),
   meme('r-banana', '香蕉貓', '嗚嗚嗚嗚嗚', 'R', 50),
