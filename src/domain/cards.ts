@@ -23,7 +23,13 @@ export interface GeneratedCat extends CardBase {
 
 export type Card = MemeCat | GeneratedCat;
 
-const meme = (id: string, name: string, title: string, rarity: Rarity, hue: number): MemeCat => ({
+const meme = (
+  id: string,
+  name: string,
+  title: string,
+  rarity: Rarity,
+  hue: number,
+): MemeCat => ({
   kind: 'meme',
   id,
   name,
@@ -76,7 +82,7 @@ export const MEME_CATS: MemeCat[] = [
   meme('r-lilbub', 'Lil Bub', '永遠吐舌頭', 'R', 300),
   meme('r-gracie', 'Gracie', '呆貓・腦袋空空', 'R', 230),
   meme('r-apple', '蘋果貓', '嗚嗚嗚（蘋果版）', 'R', 0),
-  meme('r-dance', '跳舞貓', '海邊三貓舞', 'R', 170),
+  meme('r-dance', '跳舞貓', '牛市到來', 'R', 170),
   // N
   meme('n-polite', 'Polite Cat', '有禮貌貓・不好意思打擾了', 'N', 330),
   meme('n-sad', '被罵悲傷貓', '我只是肚子餓…', 'N', 210),

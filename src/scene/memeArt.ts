@@ -151,7 +151,7 @@ export const MEME_SPECS: Record<string, CatSpec> = {
     // Ben: round white cat, small head, black comb-over, odd eyes (blue / amber),
     // dark stripes down one flank, jaw dropped - "huh?"
     fur: '#fbfbf8',
-    eyes: 'wide',
+    eyes: 'blank',
     iris: '#a9c3d6',
     iris2: '#c49a5a',
     mouth: 'gasp',
@@ -1096,13 +1096,22 @@ export const MEME_SPECS: Record<string, CatSpec> = {
     },
   },
   'n-clip': {
-    // Ginger-and-white cat in profile, delicately holding chopsticks: "您好，我吃一點"
-    fur: '#e0a060',
+    // Ginger-and-white cat politely holding chopsticks: "您好，我吃一點"
+    fur: '#e8a868',
+    stripes: '#c07838',
+    muzzle: '#fbf6ee',
+    belly: '#fbf6ee',
     eyes: 'closed',
     mouth: 'w',
-    noCat: true,
-    back: (ctx, a) => chopstickCat(ctx, a),
-    front: (ctx, a) => bigText(ctx, '您好 我吃一點', a.x + a.w / 2, a.y + a.h - 30, 34, '#ffffff', 0),
+    pose: 'sit',
+    s: 0.85,
+    dx: -40,
+    dy: -45,
+    tilt: 0.15,
+    front: (ctx, a, head) => {
+      chopsticks(ctx, head.x + 90, head.y + 140 * head.s);
+      bigText(ctx, '您好 我吃一點', a.x + a.w / 2, a.y + a.h - 30, 34, '#ffffff', 0);
+    },
   },
   'n-laundry': {
     // White-and-grey cat hanging out the washing
@@ -1888,119 +1897,4 @@ function fruitSuit(ctx: CanvasRenderingContext2D, head: Head, kind: 'banana' | '
       ctx.stroke();
     }
   }
-}
-
-/** 筷子貓: a ginger-and-white cat in right-facing profile, holding chopsticks out in front. */
-function chopstickCat(ctx: CanvasRenderingContext2D, a: ArtArea) {
-  const orange = '#e0a060';
-  const dark = '#b87838';
-  const white = '#fbf6ee';
-  solidBg(ctx, a, '#f6f2ea');
-  ctx.strokeStyle = INK;
-  ctx.lineWidth = 6;
-  ctx.lineJoin = 'round';
-  ctx.lineCap = 'round';
-
-  // Back and shoulder sloping off the left edge
-  ctx.fillStyle = orange;
-  ctx.beginPath();
-  ctx.moveTo(a.x - 10, a.y + 190);
-  ctx.bezierCurveTo(a.x + 60, a.y + 140, a.x + 150, a.y + 150, a.x + 200, a.y + 190);
-  ctx.lineTo(a.x + 245, a.y + 300);
-  ctx.lineTo(a.x + 235, a.y + a.h + 10);
-  ctx.lineTo(a.x - 10, a.y + a.h + 10);
-  ctx.closePath();
-  ctx.fill();
-  ctx.stroke();
-  ctx.fillStyle = white;
-  ctx.beginPath();
-  ctx.ellipse(a.x + 190, a.y + 330, 62, 105, -0.2, 0, Math.PI * 2);
-  ctx.fill();
-
-  // Head in profile
-  const hx = a.x + 250;
-  const hy = a.y + 150;
-  ctx.fillStyle = dark;
-  ctx.beginPath();
-  ctx.moveTo(hx - 50, hy - 55);
-  ctx.lineTo(hx - 48, hy - 128);
-  ctx.lineTo(hx - 5, hy - 70);
-  ctx.closePath();
-  ctx.fill();
-  ctx.stroke();
-  ctx.fillStyle = orange;
-  ctx.beginPath();
-  ctx.moveTo(hx - 75, hy + 30);
-  ctx.bezierCurveTo(hx - 95, hy - 50, hx - 30, hy - 85, hx + 30, hy - 70);
-  ctx.bezierCurveTo(hx + 70, hy - 60, hx + 95, hy - 25, hx + 112, hy + 5);
-  ctx.quadraticCurveTo(hx + 118, hy + 18, hx + 104, hy + 26);
-  ctx.bezierCurveTo(hx + 95, hy + 45, hx + 70, hy + 60, hx + 40, hy + 62);
-  ctx.bezierCurveTo(hx + 10, hy + 75, hx - 40, hy + 70, hx - 75, hy + 30);
-  ctx.closePath();
-  ctx.fill();
-  ctx.stroke();
-  ctx.save();
-  ctx.clip();
-  ctx.fillStyle = white;
-  ctx.beginPath();
-  ctx.ellipse(hx + 72, hy + 44, 44, 24, -0.2, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.strokeStyle = dark;
-  ctx.lineWidth = 8;
-  for (const dx of [-40, -15, 10]) {
-    ctx.beginPath();
-    ctx.moveTo(hx + dx, hy - 82);
-    ctx.lineTo(hx + dx + 8, hy - 52);
-    ctx.stroke();
-  }
-  ctx.restore();
-  // Front ear
-  ctx.fillStyle = orange;
-  ctx.beginPath();
-  ctx.moveTo(hx - 22, hy - 62);
-  ctx.lineTo(hx - 8, hy - 140);
-  ctx.lineTo(hx + 34, hy - 70);
-  ctx.closePath();
-  ctx.fill();
-  ctx.stroke();
-  ctx.fillStyle = '#f4a8b8';
-  ctx.beginPath();
-  ctx.moveTo(hx - 10, hy - 72);
-  ctx.lineTo(hx - 4, hy - 118);
-  ctx.lineTo(hx + 20, hy - 76);
-  ctx.closePath();
-  ctx.fill();
-  // Closed, contented eye; nose; whiskers
-  ctx.strokeStyle = INK;
-  ctx.lineWidth = 6;
-  ctx.beginPath();
-  ctx.arc(hx + 52, hy - 14, 14, Math.PI * 0.1, Math.PI * 0.9);
-  ctx.stroke();
-  ctx.fillStyle = '#f07890';
-  ctx.beginPath();
-  ctx.arc(hx + 108, hy + 12, 7, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.lineWidth = 3;
-  for (const [dy, ey] of [
-    [26, 14],
-    [34, 40],
-  ]) {
-    ctx.beginPath();
-    ctx.moveTo(hx + 88, hy + dy);
-    ctx.lineTo(hx + 170, hy + ey);
-    ctx.stroke();
-  }
-
-  // Foreleg reaching forward; the paw holds the chopsticks
-  ctx.save();
-  ctx.translate(a.x + 210, a.y + 300);
-  ctx.rotate(0.05);
-  ctx.fillStyle = orange;
-  ctx.lineWidth = 6;
-  ctx.beginPath();
-  ctx.roundRect(0, -22, 96, 44, 22);
-  ctx.fill();
-  ctx.stroke();
-  ctx.restore();
-  chopsticks(ctx, a.x + 305, a.y + 306);
 }

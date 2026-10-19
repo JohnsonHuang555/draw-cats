@@ -30,7 +30,9 @@ export type Eyes =
   /** Crossed, mismatched pupils. */
   | 'derp'
   /** Eyes shut tight as one slanted line each (screaming, cackling). */
-  | 'slant';
+  | 'slant'
+  /** Dumbfounded: big whites, tiny drifting pupils, flat heavy lids. */
+  | 'blank';
 export type Mouth =
   | 'w'
   | 'frown'
@@ -199,23 +201,9 @@ export function drawBody(ctx: CanvasRenderingContext2D, head: Head, spec: CatSpe
   const belly = spec.belly ?? (spec.tuxedo ? '#ffffff' : spec.muzzle);
 
   if (spec.pose === 'quad') {
-    // Standing on all fours in three-quarter view: body trailing off to the left behind the head,
-    // one hind leg showing, front legs straight down under the chin
-    ctx.beginPath();
-    ctx.moveTo(-40, 40);
-    ctx.bezierCurveTo(-120, 10, -230, 30, -235, 120);
-    ctx.bezierCurveTo(-238, 190, -160, 215, -60, 200);
-    ctx.lineTo(60, 190);
-    ctx.bezierCurveTo(90, 140, 70, 60, 40, 40);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
-    for (const [x, top, h] of [
-      [-190, 150, 125],
-      [-120, 165, 115],
-      [-44, 80, 200],
-      [44, 80, 200],
-    ]) {
+    // Standing on all fours in three-quarter view. Draw order hides every leg root:
+    // hind legs, then the body over them, then the front legs whose tops tuck under the head.
+    const leg = (x: number, top: number, h: number) => {
       ctx.fillStyle = furFill(ctx, spec);
       ctx.beginPath();
       ctx.roundRect(x - 26, top, 52, h, 24);
@@ -226,13 +214,19 @@ export function drawBody(ctx: CanvasRenderingContext2D, head: Head, spec: CatSpe
       ctx.ellipse(x, top + h - 6, 27, 16, 0, 0, Math.PI * 2);
       ctx.fill();
       ctx.stroke();
-    }
-    if (belly) {
-      ctx.fillStyle = belly;
-      ctx.beginPath();
-      ctx.ellipse(0, 110, 48, 50, 0, 0, Math.PI * 2);
-      ctx.fill();
-    }
+    };
+    leg(-190, 150, 130);
+    leg(-115, 160, 120);
+    ctx.fillStyle = furFill(ctx, spec);
+    ctx.beginPath();
+    ctx.ellipse(-95, 118, 150, 88, -0.05, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    // Chest between the front legs, so the background never shows through the gap
+    ctx.fillStyle = furFill(ctx, spec);
+    ctx.fillRect(-46, 60, 92, 150);
+    leg(-44, 70, 212);
+    leg(44, 70, 212);
   } else if (spec.pose === 'chonk') {
     // Very round, pear-shaped body under a small head
     ctx.beginPath();
@@ -528,6 +522,43 @@ export function drawEye(ctx: CanvasRenderingContext2D, x: number, y: number, sid
       ctx.arc(x, y - 6, 17, Math.PI * 0.15, Math.PI * 0.85);
       ctx.stroke();
       return;
+    case 'blank': {
+      const iris = side > 0 && spec.iris2 ? spec.iris2 : spec.iris;
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.arc(x, y, 27, 0, Math.PI * 2);
+      ctx.fill();
+      // Pupils drift apart and slightly down: not looking at anything
+      const px = x + side * 6;
+      const py = y + 5;
+      if (iris) {
+        ctx.fillStyle = iris;
+        ctx.beginPath();
+        ctx.arc(px, py, 12, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.fillStyle = INK;
+      ctx.beginPath();
+      ctx.arc(px, py, 4.5, 0, Math.PI * 2);
+      ctx.fill();
+      // Flat upper lid across the top third
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(x, y, 28, 0, Math.PI * 2);
+      ctx.clip();
+      ctx.fillStyle = spec.mask ?? furFill(ctx, spec);
+      ctx.fillRect(x - 30, y - 30, 60, 19);
+      ctx.restore();
+      ctx.strokeStyle = line;
+      ctx.beginPath();
+      ctx.moveTo(x - 26, y - 11);
+      ctx.lineTo(x + 26, y - 11);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(x, y, 27, 0, Math.PI * 2);
+      ctx.stroke();
+      return;
+    }
     case 'slant':
       ctx.beginPath();
       ctx.moveTo(x - side * 20, y - 10);
