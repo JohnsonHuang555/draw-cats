@@ -133,6 +133,19 @@ export interface Motion {
   spin: number;
   /** Seconds the cat holds still, from when its card turns face up, before it starts turning. */
   delay?: number;
+  /** If set, the cat stops for this many seconds after every turn, and each turn eases in and out. */
+  pause?: number;
+}
+
+/** How far round (in turns) a Motion has the cat at `time` seconds after its card turned face up. */
+export function turnsAt(motion: Motion, time: number): number {
+  const { spin, delay = 0, pause } = motion;
+  const t = Math.max(0, time - delay);
+  if (pause === undefined) return t / spin;
+  const cycle = spin + pause;
+  const done = Math.floor(t / cycle);
+  const p = Math.min(1, (t - done * cycle) / spin);
+  return done + (p < 0.5 ? 2 * p * p : 1 - (-2 * p + 2) ** 2 / 2);
 }
 
 /** Multipliers on the base 112 x 94 head. */
@@ -274,8 +287,7 @@ export function drawCat(ctx: CanvasRenderingContext2D, spec: CatSpec, a: ArtArea
   ctx.save();
   spec.back?.(ctx, a, head);
   if (time !== undefined && spec.motion) {
-    const { spin, delay = 0 } = spec.motion;
-    const turn = Math.max(0, time - delay) / spin;
+    const turn = turnsAt(spec.motion, time);
     const cx = a.x + a.w / 2;
     ctx.translate(cx, 0);
     ctx.scale(Math.cos(turn * Math.PI * 2), 1);

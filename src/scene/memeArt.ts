@@ -23,8 +23,9 @@ export const MEME_SPECS: Record<string, CatSpec> = {
     iris: '#b8b070',
     mouth: 'w',
     pose: 'quad',
-    // Holds still for a second after being turned face up, then spins fast, like the meme
-    motion: { spin: 1, delay: 1 },
+    // Like the meme: holds still for a second after being turned face up, then one quick turn,
+    // a one-second stop, another turn, and so on
+    motion: { spin: 1, delay: 1, pause: 1 },
     s: 0.8,
     dx: 45,
     dy: -78,
