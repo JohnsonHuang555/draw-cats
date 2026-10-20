@@ -32,7 +32,9 @@ export type Eyes =
   /** Eyes shut tight as one slanted line each (screaming, cackling). */
   | 'slant'
   /** Dumbfounded: big whites, tiny drifting pupils, flat heavy lids. */
-  | 'blank';
+  | 'blank'
+  /** Hesitant: lids drooping toward the outer corners, round pupils glancing up under them. */
+  | 'unsure';
 export type Mouth =
   | 'w'
   | 'frown'
@@ -1353,13 +1355,15 @@ export function drawEye(ctx: CanvasRenderingContext2D, x: number, y: number, sid
     ctx.fill();
     irisShadow(ctx, x, y + 1, rx - 4, ry - 3);
   }
+  const unsure = spec.eyes === 'unsure';
   ctx.fillStyle = INK;
   ctx.beginPath();
-  ctx.ellipse(x, y + 2, teary ? 16 : 8, teary ? 19 : 17, 0, 0, Math.PI * 2);
+  if (unsure) ctx.ellipse(x, y - 2, 12, 13, 0, 0, Math.PI * 2);
+  else ctx.ellipse(x, y + 2, teary ? 16 : 8, teary ? 19 : 17, 0, 0, Math.PI * 2);
   ctx.fill();
   ctx.fillStyle = '#ffffff';
   ctx.beginPath();
-  ctx.arc(x - 6, y - 8, teary ? 7 : 5, 0, Math.PI * 2);
+  ctx.arc(x - 6, unsure ? y + 1 : y - 8, teary ? 7 : 5, 0, Math.PI * 2);
   ctx.fill();
   if (teary) {
     ctx.beginPath();
@@ -1371,11 +1375,12 @@ export function drawEye(ctx: CanvasRenderingContext2D, x: number, y: number, sid
     star(ctx, x + 2, y + 2, 10);
   }
 
-  if (spec.eyes === 'grumpy' || spec.eyes === 'half') {
-    // Heavy lids: slanted toward the nose for grumpy, level for half-closed
-    const grumpy = spec.eyes === 'grumpy';
-    const inner = grumpy ? 4 : 0;
-    const outer = grumpy ? -8 : 0;
+  const lidded = spec.eyes === 'grumpy' || spec.eyes === 'half' || unsure;
+  if (lidded) {
+    // Heavy lids: slanted down toward the nose for grumpy, level for half-closed, and down
+    // toward the outer corners for unsure
+    const inner = spec.eyes === 'grumpy' ? 4 : unsure ? -19 : 0;
+    const outer = spec.eyes === 'grumpy' ? -8 : unsure ? -8 : 0;
     ctx.save();
     ctx.beginPath();
     ctx.ellipse(x, y, rx + 1, ry + 1, 0, 0, Math.PI * 2);
@@ -1400,7 +1405,7 @@ export function drawEye(ctx: CanvasRenderingContext2D, x: number, y: number, sid
   ctx.beginPath();
   ctx.ellipse(x, y, rx, ry, 0, 0, Math.PI * 2);
   ctx.stroke();
-  if (spec.eyes !== 'grumpy' && spec.eyes !== 'half') upperLid(ctx, x, y, rx, ry, line);
+  if (!lidded) upperLid(ctx, x, y, rx, ry, line);
 
   if (teary) {
     ctx.strokeStyle = '#8fd4ff';

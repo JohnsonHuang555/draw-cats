@@ -97,15 +97,14 @@ export const MEME_SPECS: Record<string, CatSpec> = {
     },
   },
   'sr-chipi': {
-    // Grey-brown tabby kitten pressed up to the camera inside a metal cat feeder, looking up,
-    // head tipped; it sways its head from side to side to the song
+    // Grey-brown tabby kitten pressed up to the camera inside a metal cat feeder, glancing up
+    // hesitantly, head tipped; it sways its head from side to side to the song
     fur: '#7c726a',
     stripes: '#3e362e',
     muzzle: '#c89a6a',
     earColor: '#3a3430',
-    eyes: 'wide',
+    eyes: 'unsure',
     iris: '#8a6838',
-    bigPupil: true,
     mouth: 'w',
     tilt: -0.2,
     s: 1.6,
