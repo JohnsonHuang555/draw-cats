@@ -8,7 +8,6 @@ import {
   motionLines,
   notes,
   sparkle,
-  spinArcs,
   type ArtArea,
   type CatSpec,
 } from './catKit';
@@ -200,10 +199,8 @@ export const MEME_SPECS: Record<string, CatSpec> = {
     s: 0.75,
     dx: 70,
     dy: -10,
-    back: (ctx, a) => {
-      solidBg(ctx, a, '#f2f0ec');
-      spinArcs(ctx, a.x + a.w / 2, a.y + a.h / 2 + 20, 190, 'rgba(60,60,70,0.55)');
-    },
+    motion: 'spin',
+    back: (ctx, a) => solidBg(ctx, a, '#f2f0ec'),
   },
   'r-smudge': {
     // Fluffy white cat at the dinner table, squinting in disgust over its plate

@@ -89,6 +89,8 @@ export interface CatSpec {
   paws?: string;
   /** Head silhouette (inked style only); the classic style always draws the same oval. */
   head?: HeadShape;
+  /** Card Art motion, played only on SR and above: 'spin' turns the whole cat about a vertical axis. */
+  motion?: 'spin';
   /** Skip the built-in cat entirely; `back`/`front` draw everything. */
   noCat?: boolean;
   mask?: string;
@@ -256,12 +258,20 @@ function ellipsePath(x: number, y: number, rx: number, ry: number, rot = 0): Pat
   return p;
 }
 
-export function drawCat(ctx: CanvasRenderingContext2D, spec: CatSpec, a: ArtArea) {
+/** `time` (seconds) plays the spec's motion; leave it out for a still picture. */
+export function drawCat(ctx: CanvasRenderingContext2D, spec: CatSpec, a: ArtArea, time?: number) {
   const s = spec.s ?? 1;
   const head = { x: a.x + a.w / 2 + (spec.dx ?? 0), y: a.y + a.h * 0.5 + (spec.dy ?? 0), s };
 
   ctx.save();
   spec.back?.(ctx, a, head);
+  if (time !== undefined && spec.motion === 'spin') {
+    // One slow turn every 4 s; the cat goes edge-on and shows its mirrored back half the time
+    const cx = a.x + a.w / 2;
+    ctx.translate(cx, 0);
+    ctx.scale(Math.cos((time / 4) * Math.PI * 2), 1);
+    ctx.translate(-cx, 0);
+  }
   if (!spec.noCat) {
     ctx.globalAlpha = spec.alpha ?? 1;
     if (spec.pose) drawBody(ctx, head, spec);
@@ -1561,29 +1571,6 @@ export function burstLines(ctx: CanvasRenderingContext2D, x: number, y: number, 
     ctx.moveTo(x + Math.cos(a) * r0, y + Math.sin(a) * r0);
     ctx.lineTo(x + Math.cos(a) * r1, y + Math.sin(a) * r1);
     ctx.stroke();
-  }
-}
-
-export function spinArcs(ctx: CanvasRenderingContext2D, x: number, y: number, r: number, color: string) {
-  ctx.strokeStyle = color;
-  ctx.fillStyle = color;
-  ctx.lineWidth = 7;
-  for (let k = 0; k < 3; k++) {
-    const start = (k / 3) * Math.PI * 2;
-    const end = start + 1.3;
-    ctx.beginPath();
-    ctx.arc(x, y, r, start, end);
-    ctx.stroke();
-    ctx.save();
-    ctx.translate(x + Math.cos(end) * r, y + Math.sin(end) * r);
-    ctx.rotate(end + Math.PI / 2);
-    ctx.beginPath();
-    ctx.moveTo(10, 0);
-    ctx.lineTo(-10, -10);
-    ctx.lineTo(-10, 10);
-    ctx.closePath();
-    ctx.fill();
-    ctx.restore();
   }
 }
 

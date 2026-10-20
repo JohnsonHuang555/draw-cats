@@ -1,7 +1,7 @@
 import { CanvasTexture, SRGBColorSpace, type Texture } from 'three';
 import type { Card } from '../domain/cards';
 import type { Rarity } from '../domain/rarity';
-import { drawCardArt } from './catArt';
+import { drawCardArt, hasMotion } from './catArt';
 
 const FONT = '"Noto Sans TC", "Microsoft JhengHei", "PingFang TC", sans-serif';
 export const CARD_TEX_W = 512;
@@ -58,6 +58,17 @@ const STARS: Record<Rarity, number> = { N: 1, R: 2, SR: 3, SSR: 4 };
 const frontCache = new Map<string, Texture>();
 const FRONT_CACHE_MAX = 60;
 
+/** Repaints the art of cached faces whose Card has motion, by card id. */
+const moving = new Map<string, (time: number) => void>();
+let lastMotionTick = -1;
+
+/** Advances moving Card Art; call once per frame. Repaints at most 30 times a second. */
+export function tickCardArt(time: number) {
+  if (moving.size === 0 || time - lastMotionTick < 1 / 30) return;
+  lastMotionTick = time;
+  for (const repaint of moving.values()) repaint(time);
+}
+
 export function cardFrontTexture(card: Card): Texture {
   const cached = frontCache.get(card.id);
   if (cached) {
@@ -66,13 +77,24 @@ export function cardFrontTexture(card: Card): Texture {
     return cached;
   }
   let tex: Texture | undefined;
-  tex = toTexture(paintCardFront(card, () => {
-    if (tex) tex.needsUpdate = true;
-  }));
+  tex = toTexture(
+    paintCardFront(
+      card,
+      () => {
+        if (tex) tex.needsUpdate = true;
+      },
+      (paintArt) =>
+        moving.set(card.id, (time) => {
+          paintArt(time);
+          if (tex) tex.needsUpdate = true;
+        }),
+    ),
+  );
   frontCache.set(card.id, tex);
   if (frontCache.size > FRONT_CACHE_MAX) {
     const [oldestId, oldest] = frontCache.entries().next().value!;
     frontCache.delete(oldestId);
+    moving.delete(oldestId);
     oldest.dispose();
   }
   return tex;
@@ -80,9 +102,14 @@ export function cardFrontTexture(card: Card): Texture {
 
 /**
  * Draws a card face onto a new full-size canvas. If a custom image exists for the card, it is
- * painted in once loaded and `onRepaint` is called.
+ * painted in once loaded and `onRepaint` is called. If the Card's art moves, `onMotion` receives a
+ * function that repaints just the art at a given time (seconds).
  */
-export function paintCardFront(card: Card, onRepaint?: (canvas: HTMLCanvasElement) => void): HTMLCanvasElement {
+export function paintCardFront(
+  card: Card,
+  onRepaint?: (canvas: HTMLCanvasElement) => void,
+  onMotion?: (paintArt: (time: number) => void) => void,
+): HTMLCanvasElement {
   const W = CARD_TEX_W;
   const H = CARD_TEX_H;
   const [canvas, ctx] = makeCanvas(W, H);
@@ -108,20 +135,22 @@ export function paintCardFront(card: Card, onRepaint?: (canvas: HTMLCanvasElemen
   const artY = 84;
   const artW = W - 68;
   const artH = 430;
-  ctx.save();
-  roundRect(ctx, artX, artY, artW, artH, 14);
-  ctx.clip();
   const area = { x: artX, y: artY, w: artW, h: artH };
-  drawCardArt(ctx, card, area);
-  ctx.restore();
-
   const strokeArtBorder = () => {
     ctx.strokeStyle = frameB;
     ctx.lineWidth = 4;
     roundRect(ctx, artX, artY, artW, artH, 14);
     ctx.stroke();
   };
-  strokeArtBorder();
+  const paintArt = (time?: number) => {
+    ctx.save();
+    roundRect(ctx, artX, artY, artW, artH, 14);
+    ctx.clip();
+    drawCardArt(ctx, card, area, time);
+    ctx.restore();
+    strokeArtBorder();
+  };
+  paintArt(hasMotion(card) ? 0 : undefined);
 
   // Header: rarity badge + stars
   ctx.textAlign = 'left';
@@ -166,6 +195,7 @@ export function paintCardFront(card: Card, onRepaint?: (canvas: HTMLCanvasElemen
 
   // A real image dropped into src/assets/cards/ replaces the cartoon once it loads.
   const customUrl = CUSTOM_ART.get(card.id);
+  if (!customUrl && hasMotion(card)) onMotion?.(paintArt);
   if (customUrl) {
     const img = new Image();
     img.onload = () => {
