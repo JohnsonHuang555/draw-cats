@@ -827,7 +827,9 @@ export const MEME_SPECS: Record<string, CatSpec> = {
     stripes: '#c07838',
     muzzle: '#fbf6ee',
     belly: '#fbf6ee',
-    eyes: 'closed',
+    // Beaming: eyes squeezed into happy arcs, pink cheeks
+    eyes: 'happy',
+    blush: true,
     mouth: 'w',
     pose: 'sit',
     s: 0.85,
