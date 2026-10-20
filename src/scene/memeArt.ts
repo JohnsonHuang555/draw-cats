@@ -50,14 +50,18 @@ export const MEME_SPECS: Record<string, CatSpec> = {
     s: 0.55,
     dx: 95,
     dy: -5,
-    back: (ctx, a, head) => {
+    // Flying: the rainbow ripples, the legs paddle, the tail wags and the stars twinkle
+    motion: { kind: 'scene', period: 1 },
+    back: (ctx, a, head, bout) => {
+      // Six animation steps a second, like the original GIF
+      const step = bout === undefined ? 0 : Math.floor(bout * 6);
       const colors = ['#ff3b3b', '#ff9a2a', '#ffe02a', '#4ad83a', '#2a9aff', '#8a4aff'];
       const bodyX = head.x - 175;
       const top = head.y - 60;
       colors.forEach((c, i) => {
         ctx.fillStyle = c;
         for (let x = a.x - 10; x < bodyX + 20; x += 40) {
-          const wave = (Math.floor((x - a.x) / 40) % 2) * 8;
+          const wave = ((Math.floor((x - a.x) / 40) + step) % 2) * 8;
           ctx.fillRect(x, top + i * 20 + wave, 41, 21);
         }
       });
@@ -75,17 +79,21 @@ export const MEME_SPECS: Record<string, CatSpec> = {
       ctx.fillStyle = '#e8287a';
       for (let i = 0; i < 12; i++) ctx.fillRect(bodyX + 30 + ((i * 53) % 130), top + 15 + ((i * 37) % 95), 9, 9);
       ctx.fillStyle = '#9a9aa2';
-      for (const lx of [bodyX + 15, bodyX + 60, bodyX + 120, bodyX + 160]) {
+      const paddle = step % 2 ? 8 : -8;
+      [bodyX + 15, bodyX + 60, bodyX + 120, bodyX + 160].forEach((lx, i) => {
         ctx.beginPath();
-        ctx.roundRect(lx, top + 128, 24, 30, 8);
+        ctx.roundRect(lx + (i % 2 ? paddle : -paddle), top + 128, 24, 30, 8);
         ctx.fill();
         ctx.stroke();
-      }
+      });
       ctx.beginPath();
-      ctx.roundRect(bodyX - 40, top + 60, 48, 20, 10);
+      ctx.roundRect(bodyX - 40, top + 60 + (step % 2 ? 8 : -6), 48, 20, 10);
       ctx.fill();
       ctx.stroke();
-      for (let i = 0; i < 6; i++) sparkle(ctx, a.x + 40 + ((i * 97) % (a.w - 60)), a.y + 40 + ((i * 151) % (a.h - 60)), 10 + (i % 3) * 5);
+      for (let i = 0; i < 6; i++) {
+        const r = 10 + ((i + step) % 3) * 5;
+        sparkle(ctx, a.x + 40 + ((i * 97) % (a.w - 60)), a.y + 40 + ((i * 151) % (a.h - 60)), r);
+      }
     },
   },
   'sr-chipi': {
@@ -114,6 +122,8 @@ export const MEME_SPECS: Record<string, CatSpec> = {
     mouth: 'flat',
     pose: 'stand',
     armsUp: true,
+    // Hops on the spot, over and over
+    motion: { kind: 'jump', period: 0.5 },
     s: 0.7,
     dy: -85,
     earColor: '#8a8a92',
@@ -146,6 +156,8 @@ export const MEME_SPECS: Record<string, CatSpec> = {
     fur: '#f6f3ee',
     eyes: 'dot',
     mouth: 'pop',
+    // Pop, shut, pop, shut
+    motion: { kind: 'mouth', period: 0.5, mouth: 'w' },
     head: { h: 1.03, fluff: 0.05 },
     s: 1.2,
     dy: 15,
@@ -168,6 +180,8 @@ export const MEME_SPECS: Record<string, CatSpec> = {
     // Round, fluffy and jowly
     head: { h: 1.04, jowl: 0.12, fluff: 0.13 },
     pose: 'chonk',
+    // Head bobs up and down, over and over
+    motion: { kind: 'nod', period: 1 },
     bodyPatch: '#fbfbf8',
     s: 0.76,
     dy: -98,
@@ -495,7 +509,7 @@ export const MEME_SPECS: Record<string, CatSpec> = {
     mouth: 'w',
     noCat: true,
     // Like OIIA Cat: still for a second, a one-second burst of drumming, a one-second rest, again
-    motion: { kind: 'drum', period: 1, delay: 1, pause: 1 },
+    motion: { kind: 'scene', period: 1, delay: 1, pause: 1 },
     back: (ctx, a, _head, bout) => bongoCat(ctx, a, bout),
   },
   'ssr-floppa': {
@@ -770,6 +784,8 @@ export const MEME_SPECS: Record<string, CatSpec> = {
     iris: '#2a2026',
     bigPupil: true,
     mouth: 'w',
+    // Shakes its head: no, no, no
+    motion: { kind: 'shake', period: 0.6 },
     pose: 'sit',
     s: 0.95,
     dy: -20,

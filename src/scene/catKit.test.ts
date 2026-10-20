@@ -32,7 +32,7 @@ describe('turnsAt', () => {
 });
 
 describe('boutAt', () => {
-  const drum = { kind: 'drum', period: 1, delay: 1, pause: 1 } as const;
+  const drum = { kind: 'scene', period: 1, delay: 1, pause: 1 } as const;
 
   it('is undefined while holding still', () => {
     expect(boutAt(drum, 0.5)).toBeUndefined();
@@ -45,6 +45,6 @@ describe('boutAt', () => {
   });
 
   it('never rests without a pause', () => {
-    expect(boutAt({ kind: 'drum', period: 1 }, 7.25)).toBeCloseTo(0.25);
+    expect(boutAt({ kind: 'scene', period: 1 }, 7.25)).toBeCloseTo(0.25);
   });
 });

@@ -62,7 +62,7 @@ The version of the rules that turn a **Cat Number** into its **Rarity** and **Tr
 _Avoid_: seed version, schema
 
 **Card Art**:
-The illustration on a **Card**'s face. It can be restyled at any time; a **Generated Cat** whose **Traits** are unchanged is still the same cat, even if its Card Art looks different. On **SR** and **SSR** cards, Card Art may move (Maxwell the Cat slowly spins; OIIA Cat waits a second after its card turns face up, then turns and stops, over and over; Bongo Cat drums the same way); lower Rarities are always still.
+The illustration on a **Card**'s face. It can be restyled at any time; a **Generated Cat** whose **Traits** are unchanged is still the same cat, even if its Card Art looks different. On **SR** and **SSR** cards, Card Art may move (for example, Maxwell the Cat slowly spins, Bongo Cat drums and No Cat shakes its head); lower Rarities are always still.
 _Avoid_: card image, portrait, sprite
 
 **Meme Chance**:

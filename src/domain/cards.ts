@@ -56,6 +56,8 @@ export const MEME_CATS: MemeCat[] = [
   meme('sr-chipi', 'Chipi Chipi Cat', 'Chipi Chipi Chapa Chapa', 'SR', 290),
   meme('sr-happy', 'Happy Cat', 'Happy Happy Happy～', 'SR', 45),
   meme('r-maxwell', 'Maxwell the Cat', '臭貓・慢慢轉圈圈', 'SR', 230),
+  meme('r-huh', 'Huh Cat', '蛤貓・蛤？', 'SR', 180),
+  meme('r-no', 'No Cat', 'NO.', 'SR', 10),
   meme('sr-pop', 'Pop Cat', '啵啵貓・啵！', 'SR', 340),
   meme('sr-ceiling', 'Ceiling Cat', '天花板貓・一直在看著你', 'SR', 30),
   meme('sr-thumbsup', 'Crying Cat Thumbs Up', '哭哭比讚貓・我沒事', 'SR', 205),
@@ -64,7 +66,6 @@ export const MEME_CATS: MemeCat[] = [
   meme('sr-bingus', 'Bingus', '沒毛也很可愛', 'SR', 15),
   meme('sr-sideeye', 'Side Eye Cat', '斜眼貓・你確定？', 'SR', 260),
   // R
-  meme('r-huh', 'Huh Cat', '蛤貓・蛤？', 'R', 180),
   meme('r-smudge', 'Smudge', '沙拉貓・我又沒吃你的沙拉', 'R', 100),
   meme('r-keyboard', 'Keyboard Cat', '鍵盤貓・演奏完畢請下台', 'R', 220),
   meme('r-banana', '香蕉貓', '嗚嗚嗚嗚嗚', 'R', 50),
@@ -73,7 +74,6 @@ export const MEME_CATS: MemeCat[] = [
   meme('r-mengbi', '矇逼哥', '？？？', 'R', 30),
   meme('r-wet', 'Cat Wet', '淋濕貓・我好濕', 'R', 200),
   meme('r-yamero', 'Yamero Cat', '不要啊！', 'R', 300),
-  meme('r-no', 'No Cat', 'NO.', 'R', 10),
   meme('r-lilbub', 'Lil Bub', '永遠吐舌頭', 'R', 300),
   // N
   meme('n-polite', 'Polite Cat', '有禮貌貓・不好意思打擾了', 'N', 330),

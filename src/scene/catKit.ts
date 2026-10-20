@@ -52,7 +52,7 @@ export type Pose = 'sit' | 'loaf' | 'stand' | 'chonk' | 'quad';
 export type Paint = string | CanvasGradient;
 export type Draw = (ctx: CanvasRenderingContext2D) => void;
 export type Head = { x: number; y: number; s: number };
-/** `bout`: seconds into the current burst of a 'drum' Motion, undefined while still. */
+/** `bout`: seconds into the current bout of a 'scene' Motion, undefined while still. */
 export type SceneDraw = (ctx: CanvasRenderingContext2D, a: ArtArea, head: Head, bout?: number) => void;
 
 export interface CatSpec {
@@ -129,13 +129,19 @@ function inked() {
 }
 
 /**
- * Card Art motion. 'spin' turns the whole cat about a vertical axis, showing its mirrored back
- * half the time; 'drum' has the spec's `back` scene play its paws (Bongo Cat).
+ * Card Art motion:
+ * - 'spin' turns the whole cat about a vertical axis, showing its mirrored back half the time
+ * - 'scene' hands the spec's `back` scene the time into each bout, to animate itself (Bongo, Nyan)
+ * - 'jump' bounces the whole cat, one hop per period
+ * - 'mouth' shows the spec's mouth for the first half of each period and `mouth` for the rest
+ * - 'nod' bobs the head up and down; 'shake' turns it from side to side (the body stays put)
  */
 export interface Motion {
-  kind: 'spin' | 'drum';
-  /** Seconds one bout of movement lasts: one full turn, or one burst of drumming. */
+  kind: 'spin' | 'scene' | 'jump' | 'mouth' | 'nod' | 'shake';
+  /** Seconds one bout of movement lasts: one turn, one burst of drumming, one hop, nod or shake. */
   period: number;
+  /** 'mouth' only: the mouth shown while the spec's own mouth is shut. */
+  mouth?: Mouth;
   /** Seconds the cat holds still, from when its card turns face up, before it starts moving. */
   delay?: number;
   /** If set, the cat stops for this many seconds after every bout (and each turn eases in and out). */
@@ -300,8 +306,11 @@ export function drawCat(ctx: CanvasRenderingContext2D, spec: CatSpec, a: ArtArea
   const head = { x: a.x + a.w / 2 + (spec.dx ?? 0), y: a.y + a.h * 0.5 + (spec.dy ?? 0), s };
 
   const motion = time === undefined ? undefined : spec.motion;
+  const bout = motion && motion.kind !== 'spin' ? boutAt(motion, time!) : undefined;
+  // How far through the current bout, 0 to 1; only set while moving
+  const phase = motion && bout !== undefined ? bout / motion.period : undefined;
   ctx.save();
-  spec.back?.(ctx, a, head, motion?.kind === 'drum' ? boutAt(motion, time!) : undefined);
+  spec.back?.(ctx, a, head, motion?.kind === 'scene' ? bout : undefined);
   if (motion?.kind === 'spin') {
     const turn = turnsAt(motion, time!);
     const cx = a.x + a.w / 2;
@@ -309,13 +318,23 @@ export function drawCat(ctx: CanvasRenderingContext2D, spec: CatSpec, a: ArtArea
     ctx.scale(Math.cos(turn * Math.PI * 2), 1);
     ctx.translate(-cx, 0);
   }
+  if (motion?.kind === 'jump' && phase !== undefined) ctx.translate(0, -40 * Math.sin(phase * Math.PI));
+  const face = motion?.kind === 'mouth' && phase !== undefined && phase >= 0.5 ? { ...spec, mouth: motion.mouth ?? 'w' } : spec;
   if (!spec.noCat) {
     ctx.globalAlpha = spec.alpha ?? 1;
-    if (spec.pose) drawBody(ctx, head, spec);
+    if (spec.pose) drawBody(ctx, head, face);
     ctx.translate(head.x, head.y);
+    if (phase !== undefined) {
+      const swing = Math.sin(phase * Math.PI * 2);
+      if (motion?.kind === 'nod') {
+        ctx.translate(0, 14 * swing * s);
+        ctx.rotate(0.05 * swing);
+      }
+      if (motion?.kind === 'shake') ctx.rotate(0.22 * swing);
+    }
     ctx.rotate(spec.tilt ?? 0);
     ctx.scale(s, s);
-    drawHead(ctx, spec);
+    drawHead(ctx, face);
   }
   ctx.restore();
 
