@@ -618,12 +618,13 @@ export const MEME_SPECS: Record<string, CatSpec> = {
     },
   },
   'sr-thumbsup': {
-    // Calico in tears, putting on a brave face
+    // Calico in tears, giving a brave thumbs up
     fur: '#f6f2ec',
     eyes: 'teary',
     iris: '#2a2030',
     mouth: 'gasp',
-    s: 1.25,
+    s: 1.2,
+    dx: 30,
     dy: 30,
     earColor: '#c88a50',
     cover: (ctx) => {
@@ -637,6 +638,8 @@ export const MEME_SPECS: Record<string, CatSpec> = {
       ctx.fill();
     },
     back: (ctx, a) => solidBg(ctx, a, '#120e14'),
+    // The system's own 👍 emoji: hand-drawn hands never read right
+    front: (ctx, a) => emoji(ctx, '👍', a.x + 88, a.y + a.h - 92, 120, -0.15),
   },
   'sr-thurston': {
     // Fluffy white cat throwing its head back in a long howl, dark eyes wide open
@@ -1085,6 +1088,20 @@ function ceilingHole(ctx: CanvasRenderingContext2D, head: Head) {
 }
 
 
+
+/** Draws an emoji character in the platform's colour emoji font. */
+function emoji(ctx: CanvasRenderingContext2D, char: string, x: number, y: number, size: number, rot: number) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(rot);
+  ctx.font = `${size}px "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.shadowColor = 'rgba(0,0,0,0.45)';
+  ctx.shadowBlur = 12;
+  ctx.fillText(char, 0, 0);
+  ctx.restore();
+}
 
 /** Red bell on a collar, hanging below the chin. */
 function collarBell(ctx: CanvasRenderingContext2D, x: number, y: number) {
