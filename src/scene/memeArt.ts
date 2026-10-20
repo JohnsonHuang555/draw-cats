@@ -639,12 +639,8 @@ export const MEME_SPECS: Record<string, CatSpec> = {
     },
     back: (ctx, a) => solidBg(ctx, a, '#120e14'),
     // The system's own 👍 emoji (hand-drawn hands never read right), recoloured as the cat's
-    // calico paw: white, with an orange and a dark brown patch like the ones on its head
-    front: (ctx, a) =>
-      furEmoji(ctx, '👍', a.x + 88, a.y + a.h - 92, 120, -0.15, '#f6f2ec', [
-        ['#c88a50', 0.2, 0.28, 0.32, 0.2],
-        ['#5a4636', -0.18, -0.3, 0.14, 0.14],
-      ]),
+    // white paw and mirrored so the thumbs up faces out, away from the cat
+    front: (ctx, a) => furEmoji(ctx, '👍', a.x + 88, a.y + a.h - 92, 120, -0.15, '#f6f2ec', true),
   },
   'sr-thurston': {
     // Fluffy white cat throwing its head back in a long howl, dark eyes wide open
@@ -1094,14 +1090,11 @@ function ceilingHole(ctx: CanvasRenderingContext2D, head: Head) {
 
 
 
-/** A coloured patch on a recoloured emoji: colour, centre and radii as fractions of the emoji size. */
-type Patch = [color: string, x: number, y: number, rx: number, ry: number];
-
 /**
  * Draws an emoji in the platform's colour emoji font, recoloured as cat fur: each pixel keeps its
- * light and shade but takes the colour of `fur`, or of the patch it falls in.
+ * light and shade but takes the colour of `fur`. `mirror` flips it left to right.
  */
-function furEmoji(ctx: CanvasRenderingContext2D, char: string, x: number, y: number, size: number, rot: number, fur: string, patches: Patch[] = []) {
+function furEmoji(ctx: CanvasRenderingContext2D, char: string, x: number, y: number, size: number, rot: number, fur: string, mirror = false) {
   const box = Math.ceil(size * 1.4);
   const off = document.createElement('canvas');
   off.width = off.height = box;
@@ -1112,16 +1105,11 @@ function furEmoji(ctx: CanvasRenderingContext2D, char: string, x: number, y: num
   octx.fillText(char, box / 2, box / 2);
 
   const rgb = (hex: string) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
-  const furRgb = rgb(fur);
-  const patchRgb = patches.map(([c, px, py, rx, ry]) => ({ c: rgb(c), px: box / 2 + px * size, py: box / 2 + py * size, rx: rx * size, ry: ry * size }));
+  const base = rgb(fur);
   const img = octx.getImageData(0, 0, box, box);
   const d = img.data;
   for (let i = 0; i < d.length; i += 4) {
     if (d[i + 3] === 0) continue;
-    const px = (i / 4) % box;
-    const py = Math.floor(i / 4 / box);
-    const patch = patchRgb.find((p) => ((px - p.px) / p.rx) ** 2 + ((py - p.py) / p.ry) ** 2 <= 1);
-    const base = patch ? patch.c : furRgb;
     // Keep the emoji's shading: its bright fill turns to fur, its dark outline to a deep shade of it
     const lum = (0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2]) / 255;
     const k = Math.min(1.05, 0.2 + lum ** 1.1);
@@ -1132,6 +1120,7 @@ function furEmoji(ctx: CanvasRenderingContext2D, char: string, x: number, y: num
   ctx.save();
   ctx.translate(x, y);
   ctx.rotate(rot);
+  if (mirror) ctx.scale(-1, 1);
   ctx.shadowColor = 'rgba(0,0,0,0.45)';
   ctx.shadowBlur = 12;
   ctx.drawImage(off, -box / 2, -box / 2);
