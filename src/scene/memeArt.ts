@@ -713,6 +713,8 @@ export const MEME_SPECS: Record<string, CatSpec> = {
     eyes: 'wide',
     iris: '#7ab84a',
     mouth: 'gasp',
+    // Muttering: the mouth flaps open and shut
+    motion: { kind: 'mouth', period: 0.3, mouth: 'w' },
     flatEars: true,
     s: 1.4,
     dy: 35,

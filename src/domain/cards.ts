@@ -56,7 +56,7 @@ export const MEME_CATS: MemeCat[] = [
   meme('sr-happy', 'Happy Cat', 'Happy Happy Happy～', 'SR', 45),
   meme('sr-chipi', 'Chipi Chipi Cat', 'Chipi Chipi Chapa Chapa', 'SR', 290),
   meme('r-no', 'No Cat', 'NO.', 'SR', 10),
-  meme('sr-thumbsup', 'Crying Cat Thumbs Up', '哭哭比讚貓・我沒事', 'SR', 205),
+  meme('r-mamaliele', '罵罵咧咧貓', '碎碎念停不下來', 'SR', 40),
   meme('r-banana', '香蕉貓', '嗚嗚嗚嗚嗚', 'SR', 50),
   // R
   meme('ssr-grumpy', 'Grumpy Cat', '不爽貓・我不要。', 'R', 0),
@@ -70,7 +70,7 @@ export const MEME_CATS: MemeCat[] = [
   meme('r-vibing', 'Vibing Cat', '搖頭貓・節奏感滿分', 'R', 260),
   meme('sr-thurston', 'Thurston Waffles', '長嘯貓・嗷嗚——', 'R', 320),
   meme('sr-ceiling', 'Ceiling Cat', '天花板貓・一直在看著你', 'R', 30),
-  meme('r-mamaliele', '罵罵咧咧貓', '碎碎念停不下來', 'R', 40),
+  meme('sr-thumbsup', 'Crying Cat Thumbs Up', '哭哭比讚貓・我沒事', 'R', 205),
   // N
   meme('n-polite', 'Polite Cat', '有禮貌貓・不好意思打擾了', 'N', 330),
   meme('r-lilbub', 'Lil Bub', '永遠吐舌頭', 'N', 300),
