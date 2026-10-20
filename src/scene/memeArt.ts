@@ -421,19 +421,15 @@ export const MEME_SPECS: Record<string, CatSpec> = {
     front: (ctx, a) => bigText(ctx, '…', a.x + a.w - 70, a.y + 60, 70, '#ffffff', 0),
   },
   'n-wajaja': {
-    // Blurry cat cackling, mouth wide open, a yellow emoji hand pointing at you
+    // Blurry cat cackling, mouth wide open
     fur: '#f2eeea',
     stripes: '#9a9090',
     eyes: 'happy',
     mouth: 'huge',
     s: 1.2,
-    dx: 30,
     dy: 10,
     tilt: -0.12,
-    front: (ctx, a) => {
-      pointingHand(ctx, a.x + 90, a.y + a.h - 100);
-      bigText(ctx, 'WAJAJA', a.x + a.w / 2, a.y + 42, 46, '#ffe14a', -0.05);
-    },
+    front: (ctx, a) => bigText(ctx, 'WAJAJA', a.x + a.w / 2, a.y + 42, 46, '#ffe14a', -0.05),
   },
   'n-chips': {
     // White cat clutching a blue bag of crisps
@@ -603,13 +599,12 @@ export const MEME_SPECS: Record<string, CatSpec> = {
     },
   },
   'sr-thumbsup': {
-    // Calico in tears, one white paw raised in a thumbs up
+    // Calico in tears, putting on a brave face
     fur: '#f6f2ec',
     eyes: 'teary',
     iris: '#2a2030',
     mouth: 'gasp',
     s: 1.25,
-    dx: 40,
     dy: 30,
     earColor: '#c88a50',
     cover: (ctx) => {
@@ -623,7 +618,6 @@ export const MEME_SPECS: Record<string, CatSpec> = {
       ctx.fill();
     },
     back: (ctx, a) => solidBg(ctx, a, '#120e14'),
-    front: (ctx, a) => thumbsUpPaw(ctx, a.x + 110, a.y + a.h - 110, '#f6f2ec'),
   },
   'sr-thurston': {
     // Fluffy white cat throwing its head back in a long howl, dark eyes wide open
@@ -1047,126 +1041,7 @@ function ceilingHole(ctx: CanvasRenderingContext2D, head: Head) {
   ctx.closePath();
 }
 
-/**
- * The cat's own paw giving a thumbs up, held up in front of its cheek: a chubby mitten of a fist,
- * a stubby thumb, and the forearm running off the bottom edge. `(x, y)` is the fist's centre.
- */
-function thumbsUpPaw(ctx: CanvasRenderingContext2D, x: number, y: number, fur: string, k = 1.4) {
-  ctx.save();
-  ctx.translate(x, y);
-  ctx.scale(k, k);
-  ctx.fillStyle = fur;
-  ctx.strokeStyle = INK;
-  ctx.lineWidth = 7 / k;
-  ctx.lineJoin = 'round';
-  ctx.lineCap = 'round';
-  // Forearm
-  const arm = new Path2D();
-  arm.moveTo(-40, 30);
-  arm.quadraticCurveTo(-46, 100, -40, 200);
-  arm.lineTo(40, 200);
-  arm.quadraticCurveTo(46, 100, 36, 34);
-  ctx.fill(arm);
-  ctx.stroke(arm);
-  // Fist and thumb as one outline: up the thumb, over the curled fingers, down their rounded front
-  const paw = new Path2D();
-  paw.moveTo(-46, 40);
-  paw.quadraticCurveTo(-60, 0, -44, -26);
-  paw.quadraticCurveTo(-52, -70, -34, -98);
-  paw.quadraticCurveTo(-18, -114, -4, -96);
-  paw.quadraticCurveTo(4, -72, -2, -40);
-  paw.quadraticCurveTo(26, -50, 44, -34);
-  paw.quadraticCurveTo(66, -18, 50, -2);
-  paw.quadraticCurveTo(68, 16, 48, 30);
-  paw.quadraticCurveTo(56, 52, 24, 54);
-  paw.quadraticCurveTo(-20, 62, -46, 40);
-  paw.closePath();
-  ctx.fill(paw);
-  // Soft shadow under the curled fingers
-  ctx.save();
-  ctx.clip(paw);
-  ctx.globalCompositeOperation = 'multiply';
-  ctx.fillStyle = '#e2dbe9';
-  ctx.beginPath();
-  ctx.ellipse(10, 46, 60, 22, 0, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.restore();
-  ctx.stroke(paw);
-  // Short creases between the curled fingers, and where the thumb meets the fist
-  ctx.lineWidth = 4 / k;
-  for (const [x0, y0, x1, y1] of [
-    [50, -2, 32, -4],
-    [48, 30, 30, 28],
-    [-2, -40, -12, -30],
-  ]) {
-    ctx.beginPath();
-    ctx.moveTo(x0, y0);
-    ctx.lineTo(x1, y1);
-    ctx.stroke();
-  }
-  ctx.restore();
-}
 
-/**
- * The yellow 👉 emoji pointing right at the cat, wrist off the left edge: one outline for the
- * hand and index finger, curled fingers along its front, thumb folded over them.
- * `(x, y)` is the middle of the fist.
- */
-function pointingHand(ctx: CanvasRenderingContext2D, x: number, y: number, k = 1.25) {
-  ctx.save();
-  ctx.translate(x, y);
-  ctx.scale(k, k);
-  const g = ctx.createLinearGradient(0, -40, 0, 70);
-  g.addColorStop(0, '#ffdc5a');
-  g.addColorStop(1, '#f4b422');
-  ctx.fillStyle = g;
-  ctx.strokeStyle = '#a86c10';
-  ctx.lineWidth = 6 / k;
-  ctx.lineJoin = 'round';
-  ctx.lineCap = 'round';
-  const hand = new Path2D();
-  hand.moveTo(-130, -26);
-  hand.quadraticCurveTo(-60, -40, -10, -36);
-  // Index finger out to a round tip and back
-  hand.lineTo(66, -34);
-  hand.arc(66, -21, 13, -Math.PI / 2, Math.PI / 2);
-  hand.lineTo(22, -8);
-  // Three curled fingers, each a little shorter, down the front of the fist
-  hand.quadraticCurveTo(46, 6, 22, 20);
-  hand.quadraticCurveTo(42, 32, 16, 42);
-  hand.quadraticCurveTo(34, 56, 6, 62);
-  hand.quadraticCurveTo(-30, 76, -60, 58);
-  hand.lineTo(-130, 52);
-  hand.closePath();
-  ctx.fill(hand);
-  ctx.stroke(hand);
-  // Creases between the curled fingers
-  ctx.lineWidth = 4 / k;
-  for (const [x0, y0, x1, y1] of [
-    [22, 20, 2, 19],
-    [16, 42, -4, 40],
-  ]) {
-    ctx.beginPath();
-    ctx.moveTo(x0, y0);
-    ctx.lineTo(x1, y1);
-    ctx.stroke();
-  }
-  // Thumb folded across the top of the curled fingers
-  ctx.lineWidth = 6 / k;
-  const thumb = new Path2D();
-  thumb.moveTo(-56, -14);
-  thumb.quadraticCurveTo(-10, -26, 20, -12);
-  thumb.quadraticCurveTo(34, -2, 18, 6);
-  thumb.quadraticCurveTo(-16, 10, -56, 8);
-  ctx.fill(thumb);
-  ctx.stroke(thumb);
-  // Shine along the index finger
-  ctx.fillStyle = 'rgba(255,255,255,0.55)';
-  ctx.beginPath();
-  ctx.ellipse(36, -28, 24, 3.5, 0, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.restore();
-}
 
 /** Red bell on a collar, hanging below the chin. */
 function collarBell(ctx: CanvasRenderingContext2D, x: number, y: number) {
