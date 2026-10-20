@@ -58,15 +58,27 @@ const STARS: Record<Rarity, number> = { N: 1, R: 2, SR: 3, SSR: 4 };
 const frontCache = new Map<string, Texture>();
 const FRONT_CACHE_MAX = 60;
 
-/** Repaints the art of cached faces whose Card has motion, by card id. */
-const moving = new Map<string, (time: number) => void>();
+/**
+ * Cached faces whose Card has motion, by card id: how to repaint the art, and when its motion
+ * started (set on the first tick, and again whenever the card turns face up).
+ */
+const moving = new Map<string, { repaint: (time: number) => void; start?: number }>();
 let lastMotionTick = -1;
 
 /** Advances moving Card Art; call once per frame. Repaints at most 30 times a second. */
 export function tickCardArt(time: number) {
   if (moving.size === 0 || time - lastMotionTick < 1 / 30) return;
   lastMotionTick = time;
-  for (const repaint of moving.values()) repaint(time);
+  for (const entry of moving.values()) {
+    entry.start ??= time;
+    entry.repaint(time - entry.start);
+  }
+}
+
+/** Restarts a Card's motion from its first frame, e.g. when the card turns face up. */
+export function restartCardArt(cardId: string, time: number) {
+  const entry = moving.get(cardId);
+  if (entry) entry.start = time;
 }
 
 export function cardFrontTexture(card: Card): Texture {
@@ -84,9 +96,11 @@ export function cardFrontTexture(card: Card): Texture {
         if (tex) tex.needsUpdate = true;
       },
       (paintArt) =>
-        moving.set(card.id, (time) => {
-          paintArt(time);
-          if (tex) tex.needsUpdate = true;
+        moving.set(card.id, {
+          repaint: (time) => {
+            paintArt(time);
+            if (tex) tex.needsUpdate = true;
+          },
         }),
     ),
   );

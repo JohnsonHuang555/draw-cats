@@ -89,8 +89,8 @@ export interface CatSpec {
   paws?: string;
   /** Head silhouette (inked style only); the classic style always draws the same oval. */
   head?: HeadShape;
-  /** Card Art motion, played only on SR and above: 'spin' turns the whole cat about a vertical axis. */
-  motion?: 'spin';
+  /** Card Art motion, played only on SR and above. */
+  motion?: Motion;
   /** Skip the built-in cat entirely; `back`/`front` draw everything. */
   noCat?: boolean;
   mask?: string;
@@ -125,6 +125,14 @@ export function setArtStyle(style: ArtStyle) {
 
 function inked() {
   return artStyle === 'inked';
+}
+
+/** The whole cat turning about a vertical axis, showing its mirrored back half the time. */
+export interface Motion {
+  /** Seconds per full turn. */
+  spin: number;
+  /** Seconds the cat holds still, from when its card turns face up, before it starts turning. */
+  delay?: number;
 }
 
 /** Multipliers on the base 112 x 94 head. */
@@ -258,18 +266,19 @@ function ellipsePath(x: number, y: number, rx: number, ry: number, rot = 0): Pat
   return p;
 }
 
-/** `time` (seconds) plays the spec's motion; leave it out for a still picture. */
+/** `time` (seconds since the card turned face up) plays the spec's motion; leave it out for a still picture. */
 export function drawCat(ctx: CanvasRenderingContext2D, spec: CatSpec, a: ArtArea, time?: number) {
   const s = spec.s ?? 1;
   const head = { x: a.x + a.w / 2 + (spec.dx ?? 0), y: a.y + a.h * 0.5 + (spec.dy ?? 0), s };
 
   ctx.save();
   spec.back?.(ctx, a, head);
-  if (time !== undefined && spec.motion === 'spin') {
-    // One slow turn every 4 s; the cat goes edge-on and shows its mirrored back half the time
+  if (time !== undefined && spec.motion) {
+    const { spin, delay = 0 } = spec.motion;
+    const turn = Math.max(0, time - delay) / spin;
     const cx = a.x + a.w / 2;
     ctx.translate(cx, 0);
-    ctx.scale(Math.cos((time / 4) * Math.PI * 2), 1);
+    ctx.scale(Math.cos(turn * Math.PI * 2), 1);
     ctx.translate(-cx, 0);
   }
   if (!spec.noCat) {
@@ -778,7 +787,7 @@ function loafBody(ctx: CanvasRenderingContext2D, spec: CatSpec, line: string, o:
   tube(ctx, tail, 28, fur, line, o);
 }
 
-/** On all fours, three-quarter view: hind legs, tail, body with a haunch, front legs under the chest. */
+/** On all fours, three-quarter view: hind legs, tail, body, front legs under a rounded chest. */
 function quadBody(ctx: CanvasRenderingContext2D, spec: CatSpec, line: string, o: number) {
   const fur = furFill(ctx, spec);
   groundShadow(ctx, -80, 282, 200);
@@ -799,23 +808,15 @@ function quadBody(ctx: CanvasRenderingContext2D, spec: CatSpec, line: string, o:
   ctx.fill(body);
   ctx.stroke(body);
   shadeBody(ctx, spec, body, -95, 118, 150, 88);
-  ctx.save();
-  ctx.clip(body);
-  ctx.lineWidth = o * 0.6;
-  ctx.beginPath();
-  ctx.moveTo(-140, 212);
-  ctx.bezierCurveTo(-150, 130, -190, 84, -240, 98);
-  ctx.stroke();
-  ctx.restore();
   leg(ctx, spec, -42, 150, 282, 50, 190);
   leg(ctx, spec, 42, 150, 282, 50, 190);
   const belly = bellyOf(spec);
-  const chest = ellipsePath(0, 128, 78, 70);
-  ctx.save();
-  ctx.clip(chest);
+  // Rounded chest in front of the body, outlined so the body reads as two masses
+  const chest = ellipsePath(0, 128, 80, 72);
   ctx.fillStyle = fur;
   ctx.fill(chest);
-  ctx.restore();
+  ctx.stroke(chest);
+  shadeBody(ctx, spec, chest, 0, 128, 80, 72);
   if (belly) {
     ctx.fillStyle = belly;
     ctx.fill(ellipsePath(0, 138, 40, 50));

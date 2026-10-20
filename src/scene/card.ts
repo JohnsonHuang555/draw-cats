@@ -12,7 +12,7 @@ import {
 } from 'three';
 import type { Copy } from '../domain/pull';
 import { FOIL_STRENGTH, rarityColor } from './palette';
-import { cardBackTexture, cardFrontTexture, glowTexture, newBadgeTexture } from './textures';
+import { cardBackTexture, cardFrontTexture, glowTexture, newBadgeTexture, restartCardArt } from './textures';
 
 export const CARD_W = 2.2;
 export const CARD_H = CARD_W * (716 / 512);
@@ -112,6 +112,7 @@ export class CardView {
   /** How strongly viewer tilt affects this card: 0 none, 1 full (Showcase / inspect). */
   tiltAmount = 0.2;
   private newBadge?: Sprite;
+  private faceUp = false;
   /** This Copy is a New Card; its badge appears once revealed. */
   isNew = false;
 
@@ -173,6 +174,10 @@ export class CardView {
     const ty = tilt.y * amt + idleY * (1 - amt * 0.6);
     this.uniforms.tilt.value.set(tx, ty);
     this.uniforms.time.value = time;
+    // Moving Card Art starts over each time the card turns face up
+    const faceUp = Math.cos(this.flipper.rotation.y) > 0;
+    if (faceUp && !this.faceUp) restartCardArt(this.copy.card.id, time);
+    this.faceUp = faceUp;
     this.tilter.rotation.y += (tilt.x * 0.45 * amt - this.tilter.rotation.y) * 0.15;
     this.tilter.rotation.x += (-tilt.y * 0.35 * amt - this.tilter.rotation.x) * 0.15;
   }
