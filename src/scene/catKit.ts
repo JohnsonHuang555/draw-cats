@@ -715,6 +715,14 @@ function chonkBody(ctx: CanvasRenderingContext2D, spec: CatSpec) {
     ctx.restore();
   }
   shadeBody(ctx, spec, body, 0, 200, 170, 140);
+  const belly = bellyOf(spec);
+  if (belly) {
+    ctx.save();
+    ctx.clip(body);
+    ctx.fillStyle = belly;
+    ctx.fill(ellipsePath(0, 230, 100, 120));
+    ctx.restore();
+  }
   ctx.fillStyle = spec.paws ?? fur;
   for (const side of [-1, 1]) {
     const foot = ellipsePath(side * 55, 335, 34, 20);

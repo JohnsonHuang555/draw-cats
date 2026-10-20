@@ -103,7 +103,7 @@ export const MEME_SPECS: Record<string, CatSpec> = {
     },
   },
   'sr-happy': {
-    // Small calico kitten standing up, arms flung wide, staring straight ahead
+    // Small grey tabby-and-white kitten standing up, arms flung wide, staring straight ahead
     fur: '#f6f2ec',
     eyes: 'wide',
     iris: '#4a3a30',
@@ -113,16 +113,24 @@ export const MEME_SPECS: Record<string, CatSpec> = {
     armsUp: true,
     s: 0.7,
     dy: -85,
-    earColor: '#8a7060',
+    earColor: '#8a8a92',
     cover: (ctx) => {
-      ctx.fillStyle = '#8a7060';
+      ctx.fillStyle = '#8a8a92';
       ctx.beginPath();
       ctx.ellipse(-60, -70, 65, 45, 0.3, 0, Math.PI * 2);
       ctx.fill();
-      ctx.fillStyle = '#c8a070';
       ctx.beginPath();
       ctx.ellipse(70, -60, 50, 40, -0.3, 0, Math.PI * 2);
       ctx.fill();
+      // Tabby stripes across the grey cap
+      ctx.strokeStyle = '#5e5e66';
+      ctx.lineWidth = 7;
+      for (const x of [-30, 0, 30]) {
+        ctx.beginPath();
+        ctx.moveTo(x * 1.1, -94);
+        ctx.lineTo(x * 0.8, -62);
+        ctx.stroke();
+      }
     },
     front: (ctx, a) => {
       bigText(ctx, 'HAPPY', a.x + a.w / 2, a.y + 46, 46, '#ffe14a', 0);
@@ -131,7 +139,7 @@ export const MEME_SPECS: Record<string, CatSpec> = {
     },
   },
   'sr-pop': {
-    // White cat, grey-brown patch over one ear, whole face swallowed by a round "pop"
+    // White cat, grey-brown patches over both ears, whole face swallowed by a round "pop"
     fur: '#f6f3ee',
     eyes: 'dot',
     mouth: 'pop',
@@ -142,17 +150,17 @@ export const MEME_SPECS: Record<string, CatSpec> = {
       ctx.fillStyle = '#8a7a6a';
       ctx.beginPath();
       ctx.ellipse(-82, -58, 58, 52, 0.4, 0, Math.PI * 2);
+      ctx.ellipse(92, -62, 40, 40, -0.4, 0, Math.PI * 2);
       ctx.fill();
     },
     back: (ctx, _a, head) => burstLines(ctx, head.x, head.y + 50, 12, 165, 215, 'rgba(255,255,255,0.55)'),
   },
   'r-huh': {
-    // Ben: round white cat, small head, black comb-over, odd eyes (blue / amber),
+    // Ben: round white cat, small head, black comb-over, wide pale yellow-green eyes,
     // dark stripes down one flank, jaw dropped - "huh?"
     fur: '#fbfbf8',
-    eyes: 'blank',
-    iris: '#a9c3d6',
-    iris2: '#c49a5a',
+    eyes: 'wide',
+    iris: '#c4c88a',
     mouth: 'gasp',
     // Round, fluffy and jowly
     head: { h: 1.04, jowl: 0.12, fluff: 0.13 },
@@ -187,10 +195,12 @@ export const MEME_SPECS: Record<string, CatSpec> = {
     },
   },
   'r-maxwell': {
-    // All-black loaf with a white chest, small head on the right, spinning
+    // Black loaf with a white chin, chest and paws, small head on the right, spinning
     fur: '#1e1e24',
     darkFur: true,
     belly: '#ffffff',
+    muzzle: '#ffffff',
+    paws: '#ffffff',
     eyes: 'normal',
     iris: '#8a9a6a',
     mouth: 'w',
@@ -309,6 +319,7 @@ export const MEME_SPECS: Record<string, CatSpec> = {
     fur: '#fbfbf8',
     eyes: 'wide',
     iris: '#a8a050',
+    bigPupil: true,
     mouth: 'polite',
     s: 1.35,
     dy: 35,
@@ -469,9 +480,10 @@ export const MEME_SPECS: Record<string, CatSpec> = {
     fur: '#f0a860',
     stripes: '#c87a3a',
     muzzle: '#fff6ec',
-    eyes: 'normal',
-    iris: '#c89a50',
-    mouth: 'o',
+    eyes: 'wide',
+    iris: '#4a4840',
+    bigPupil: true,
+    mouth: 'flat',
     s: 1.35,
     dy: 30,
   },
@@ -499,6 +511,23 @@ export const MEME_SPECS: Record<string, CatSpec> = {
     head: { w: 1.05, jowl: 0.14, fluff: 0.03 },
     pose: 'sit',
     dy: -20,
+    over: (ctx) => {
+      // Black tear lines from the inner eye corners down to the muzzle, and dark lips
+      ctx.strokeStyle = '#2a1e14';
+      ctx.lineWidth = 6;
+      ctx.lineCap = 'round';
+      for (const side of [-1, 1]) {
+        ctx.beginPath();
+        ctx.moveTo(side * 22, 8);
+        ctx.quadraticCurveTo(side * 30, 22, side * 36, 34);
+        ctx.stroke();
+      }
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.moveTo(-22, 50);
+      ctx.quadraticCurveTo(0, 58, 22, 50);
+      ctx.stroke();
+    },
   },
   'ssr-longcat': {
     fur: '#ffffff',
@@ -543,7 +572,7 @@ export const MEME_SPECS: Record<string, CatSpec> = {
     stripes: '#b8844e',
     muzzle: '#f2dcc0',
     eyes: 'wide',
-    iris: '#3a3028',
+    iris: '#c89a3a',
     bigPupil: true,
     mouth: 'w',
     s: 0.85,
@@ -597,9 +626,11 @@ export const MEME_SPECS: Record<string, CatSpec> = {
     front: (ctx, a) => thumbsUpEmoji(ctx, a.x + 95, a.y + a.h - 105),
   },
   'sr-thurston': {
-    // White cat throwing its head back in a long howl
+    // Fluffy white cat throwing its head back in a long howl, dark eyes wide open
     fur: '#f6f2ec',
-    eyes: 'closed',
+    eyes: 'wide',
+    iris: '#2a2832',
+    bigPupil: true,
     mouth: 'huge',
     tilt: -0.35,
     dy: 25,
@@ -619,9 +650,11 @@ export const MEME_SPECS: Record<string, CatSpec> = {
     front: glassGlare,
   },
   'sr-bingus': {
+    // Hairless pink Sphynx with big black eyes and huge ears
     fur: '#e9b6a6',
-    eyes: 'normal',
-    iris: '#9cc85a',
+    eyes: 'wide',
+    iris: '#1e1a22',
+    bigPupil: true,
     mouth: 'w',
     bigEars: true,
     cover: (ctx) => {
@@ -755,11 +788,12 @@ export const MEME_SPECS: Record<string, CatSpec> = {
     },
   },
   'r-lilbub': {
-    // Tiny grey tabby with huge eyes and a permanent tongue-out
-    fur: '#a29a90',
-    stripes: '#6e665c',
-    muzzle: '#e6e0d8',
+    // Tiny brown tabby with huge green-yellow eyes and a permanent tongue-out
+    fur: '#9a8a72',
+    stripes: '#5e5040',
+    muzzle: '#ece4d8',
     eyes: 'wide',
+    iris: '#a8b45a',
     mouth: 'blep',
     pose: 'sit',
     s: 0.85,

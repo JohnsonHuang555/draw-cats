@@ -12,12 +12,14 @@ const memes = params.has('all') ? MEME_CATS : MEME_CATS.filter((c) => ids.includ
 const numbers = (params.get('n') ?? '42,777,2024').split(',').map(Number).filter((n) => n >= 1 && n <= 9999);
 const cards: Card[] = [...memes, ...numbers.map(generateCat)];
 
+// ?style=inked shows one style only
+const styles = (params.get('style')?.split(',') ?? ['classic', 'inked']) as ArtStyle[];
 const motions: ((time: number) => void)[] = [];
 const rows = document.getElementById('rows')!;
 for (const card of cards) {
   const row = document.createElement('div');
   row.className = 'row';
-  for (const style of ['classic', 'inked'] as ArtStyle[]) {
+  for (const style of styles) {
     setArtStyle(style);
     const fig = document.createElement('figure');
     const caption = document.createElement('figcaption');
