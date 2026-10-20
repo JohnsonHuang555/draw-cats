@@ -12,6 +12,9 @@ import {
   type CatSpec,
 } from './catKit';
 
+/** Seconds for a tear to run the length of 香蕉貓's tear streams. */
+const TEAR_FLOW = 1.2;
+
 export const MEME_SPECS: Record<string, CatSpec> = {
   'ssr-oiia': {
     // Ethel: grey tabby standing square on all fours, blank stare, white socks
@@ -319,12 +322,12 @@ export const MEME_SPECS: Record<string, CatSpec> = {
     noEars: true,
     s: 0.52,
     dy: -20,
-    motion: { kind: 'scene', period: 0.6 },
+    motion: { kind: 'scene', period: TEAR_FLOW },
     back: (ctx, a, head) => {
       solidBg(ctx, a, '#f6f4ee');
       bananaSuit(ctx, head);
     },
-    front: (ctx, a, head, bout) => tearFountains(ctx, a, head, bout === undefined ? 0 : bout / 0.6),
+    front: (ctx, a, head, bout) => tearFountains(ctx, a, head, bout === undefined ? 0 : bout / TEAR_FLOW),
   },
   'r-vibing': {
     // White cat bobbing to the beat
@@ -1265,6 +1268,8 @@ function chopsticks(ctx: CanvasRenderingContext2D, x: number, y: number) {
 /** Banana costume around a kitten face, with little limbs poking out. */
 function bananaSuit(ctx: CanvasRenderingContext2D, head: Head) {
   const { x, y } = head;
+  // Horizontal offsets are scaled by this, for a slim banana
+  const k = 0.72;
   ctx.strokeStyle = INK;
   ctx.lineWidth = 5;
   ctx.lineJoin = 'round';
@@ -1272,20 +1277,20 @@ function bananaSuit(ctx: CanvasRenderingContext2D, head: Head) {
   ctx.fillStyle = '#d8c4a8';
   for (const side of [-1, 1]) {
     ctx.beginPath();
-    ctx.ellipse(x + side * 150, y + 60, 34, 18, side * 0.5, 0, Math.PI * 2);
+    ctx.ellipse(x + side * 150 * k, y + 60, 34, 18, side * 0.5, 0, Math.PI * 2);
     ctx.fill();
     ctx.stroke();
     ctx.beginPath();
-    ctx.roundRect(x + side * 50 - 18, y + 140, 36, 60, 14);
+    ctx.roundRect(x + side * 50 * k - 18, y + 140, 36, 60, 14);
     ctx.fill();
     ctx.stroke();
   }
   ctx.fillStyle = '#f7d64a';
   ctx.beginPath();
-  ctx.moveTo(x - 10, y - 175);
-  ctx.bezierCurveTo(x - 160, y - 120, x - 170, y + 120, x - 30, y + 170);
-  ctx.lineTo(x + 60, y + 165);
-  ctx.bezierCurveTo(x + 160, y + 100, x + 150, y - 110, x + 20, y - 175);
+  ctx.moveTo(x - 10 * k, y - 175);
+  ctx.bezierCurveTo(x - 160 * k, y - 120, x - 170 * k, y + 120, x - 30 * k, y + 170);
+  ctx.lineTo(x + 60 * k, y + 165);
+  ctx.bezierCurveTo(x + 160 * k, y + 100, x + 150 * k, y - 110, x + 20 * k, y - 175);
   ctx.closePath();
   ctx.fill();
   ctx.stroke();
@@ -1297,7 +1302,7 @@ function bananaSuit(ctx: CanvasRenderingContext2D, head: Head) {
     [100, -60, 7],
   ]) {
     ctx.beginPath();
-    ctx.arc(x + dx, y + dy, r, 0, Math.PI * 2);
+    ctx.arc(x + dx * k, y + dy, r, 0, Math.PI * 2);
     ctx.fill();
   }
   ctx.fillStyle = '#6b4a22';
