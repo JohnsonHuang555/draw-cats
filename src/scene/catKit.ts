@@ -87,6 +87,8 @@ export interface CatSpec {
   armsUp?: boolean;
   /** Colour of the paw tips (quad and stand poses). */
   paws?: string;
+  /** Head silhouette (inked style only); the classic style always draws the same oval. */
+  head?: HeadShape;
   /** Skip the built-in cat entirely; `back`/`front` draw everything. */
   noCat?: boolean;
   mask?: string;
@@ -107,6 +109,159 @@ export interface CatSpec {
 }
 
 export const INK = '#241a2e';
+
+/**
+ * How cats are drawn. 'inked' is the restyle being prototyped in art-lab.html: heavy outlines
+ * tinted by the fur, fine inner lines, shading, fur tufts and per-cat head shapes (ADR 0003).
+ */
+export type ArtStyle = 'classic' | 'inked';
+let artStyle: ArtStyle = 'classic';
+
+export function setArtStyle(style: ArtStyle) {
+  artStyle = style;
+}
+
+function inked() {
+  return artStyle === 'inked';
+}
+
+/** Multipliers on the base 112 x 94 head. */
+export interface HeadShape {
+  w?: number;
+  h?: number;
+  /** Widens the lower half into heavy cheeks and flattens the chin (0 = none). */
+  jowl?: number;
+  /** Height of the fur tufts along the cheeks (0 = smooth, default 0.08). */
+  fluff?: number;
+}
+
+function mixHex(hex: string, toward: string, t: number): string {
+  const parse = (h: string) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
+  if (!/^#[0-9a-f]{6}$/i.test(hex)) return toward;
+  const a = parse(hex);
+  const b = parse(toward);
+  return `rgb(${a.map((v, i) => Math.round(v + (b[i] - v) * t)).join(',')})`;
+}
+
+/** Outline colour: plain ink, or (inked) a dark shade of the cat's own fur. */
+export function lineOf(spec: CatSpec): string {
+  if (!inked()) return INK;
+  return spec.darkFur ? '#0c0910' : mixHex(spec.fur, INK, 0.85);
+}
+
+/** Line weight of silhouettes (head, ears, body). */
+function outlineWidth() {
+  return inked() ? 9 : 6;
+}
+
+function headPath(spec: CatSpec, inset = 0): Path2D {
+  const p = new Path2D();
+  if (!inked()) {
+    if (spec.spiky) {
+      const n = 22;
+      for (let i = 0; i <= n * 2; i++) {
+        const a = (i / (n * 2)) * Math.PI * 2;
+        const r = i % 2 === 0 ? 1.18 : 1;
+        p.lineTo(Math.cos(a) * (112 - inset) * r, Math.sin(a) * (94 - inset) * r);
+      }
+    } else {
+      p.ellipse(0, 0, 112 - inset, 94 - inset, 0, 0, Math.PI * 2);
+    }
+    return p;
+  }
+  const { w = 1, h = 1, jowl = 0, fluff = 0.08 } = spec.head ?? {};
+  const at = (a: number, r = 1): [number, number] => {
+    const lower = Math.max(0, Math.sin(a));
+    const rx = 112 * w * (1 + jowl * lower ** 1.5) - inset;
+    const ry = 94 * h * (1 - jowl * 0.25 * lower) - inset;
+    return [Math.cos(a) * rx * r, Math.sin(a) * ry * r];
+  };
+  if (spec.spiky) {
+    const n = 44;
+    for (let i = 0; i < n; i++) p.lineTo(...at((i / n) * Math.PI * 2, i % 2 === 0 ? 1.18 : 1));
+    p.closePath();
+    return p;
+  }
+  // Smooth outline, except for a few swept tufts on each cheek that point down and out
+  const TUFTS = 3;
+  const cheeks: [number, number, number][] = [
+    [0.02, 0.8, 1],
+    [Math.PI - 0.75, Math.PI + 0.05, -1],
+  ];
+  const amp = fluff * 1.6;
+  const steps = 72;
+  let a = 0;
+  p.moveTo(...at(0));
+  for (let i = 1; i <= steps; i++) {
+    const next = (i / steps) * Math.PI * 2;
+    const cheek = amp > 0 ? cheeks.find(([c0]) => a < c0 && next >= c0) : undefined;
+    if (cheek) {
+      const [c0, c1, dir] = cheek;
+      p.lineTo(...at(c0));
+      const span = (c1 - c0) / TUFTS;
+      for (let t = 0; t < TUFTS; t++) {
+        const t0 = c0 + span * t;
+        const t1 = t0 + span;
+        // Tip leans toward the jaw: the far end on the right cheek, the near end on the left
+        const tip = dir > 0 ? t1 : t0 + span * 0.15;
+        p.quadraticCurveTo(...at(t0 + span * 0.5, 1 + amp * 0.9), ...at(tip, 1 + amp * 1.3));
+        p.quadraticCurveTo(...at(t1, 1 + amp * 0.3), ...at(t1));
+      }
+      a = c1;
+      continue;
+    }
+    if (next > a) p.lineTo(...at(next));
+    a = Math.max(a, next);
+  }
+  p.closePath();
+  return p;
+}
+
+/** Inked style: a cool multiply shadow toward the lower right of `clip`, and a soft highlight. */
+function shade(ctx: CanvasRenderingContext2D, spec: CatSpec, clip: Path2D, shadow: Path2D, light: [number, number, number]) {
+  ctx.save();
+  ctx.clip(clip);
+  ctx.globalCompositeOperation = 'multiply';
+  ctx.fillStyle = spec.darkFur ? 'rgba(0,0,0,0.5)' : '#e2dbe9';
+  ctx.fill(shadow, 'evenodd');
+  ctx.globalCompositeOperation = 'source-over';
+  const [lx, ly, lr] = light;
+  const g = ctx.createRadialGradient(lx, ly, 0, lx, ly, lr);
+  g.addColorStop(0, `rgba(255,255,255,${spec.darkFur ? 0.16 : 0.32})`);
+  g.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = g;
+  ctx.fillRect(lx - lr, ly - lr, lr * 2, lr * 2);
+  ctx.restore();
+}
+
+/** Shadow region: everything outside `path` nudged toward the light (up-left). */
+function offsetShadow(path: Path2D, dx: number, dy: number, k: number): Path2D {
+  const s = new Path2D();
+  s.rect(-1000, -1000, 2000, 2000);
+  s.addPath(path, new DOMMatrix().translate(dx, dy).scale(k));
+  return s;
+}
+
+/** Inked style: shades a body part, given its outline and roughly where its centre and radii are. */
+function shadeBody(ctx: CanvasRenderingContext2D, spec: CatSpec, part: Path2D, x: number, y: number, rx: number, ry: number) {
+  if (!inked()) return;
+  const lit = new Path2D();
+  lit.ellipse(0, 0, rx, ry, 0, 0, Math.PI * 2);
+  shade(ctx, spec, part, offsetShadow(lit, x - rx * 0.16, y - ry * 0.2, 0.98), [x - rx * 0.4, y - ry * 0.45, Math.max(rx, ry) * 0.7]);
+}
+
+function ellipsePath(x: number, y: number, rx: number, ry: number, rot = 0): Path2D {
+  const p = new Path2D();
+  p.ellipse(x, y, rx, ry, rot, 0, Math.PI * 2);
+  return p;
+}
+
+/** Fills and outlines a path, then shades it (inked style). */
+function bodyPart(ctx: CanvasRenderingContext2D, spec: CatSpec, part: Path2D, x: number, y: number, rx: number, ry: number) {
+  ctx.fill(part);
+  ctx.stroke(part);
+  shadeBody(ctx, spec, part, x, y, rx, ry);
+}
 
 export function drawCat(ctx: CanvasRenderingContext2D, spec: CatSpec, a: ArtArea) {
   const s = spec.s ?? 1;
@@ -192,23 +347,30 @@ export function furFill(ctx: CanvasRenderingContext2D, spec: CatSpec): Paint {
 
 export function drawBody(ctx: CanvasRenderingContext2D, head: Head, spec: CatSpec) {
   const s = head.s;
+  const line = lineOf(spec);
+  const outline = outlineWidth();
   ctx.save();
   ctx.translate(head.x, head.y);
   ctx.scale(s, s);
   ctx.fillStyle = furFill(ctx, spec);
-  ctx.strokeStyle = INK;
-  ctx.lineWidth = 6;
+  ctx.strokeStyle = line;
+  ctx.lineWidth = outline;
+  if (inked()) ctx.lineJoin = 'round';
   const belly = spec.belly ?? (spec.tuxedo ? '#ffffff' : spec.muzzle);
+  const fillBelly = (x: number, y: number, rx: number, ry: number) => {
+    if (!belly) return;
+    ctx.fillStyle = belly;
+    ctx.fill(ellipsePath(x, y, rx, ry));
+  };
 
   if (spec.pose === 'quad') {
     // Standing on all fours in three-quarter view. Draw order hides every leg root:
     // hind legs, then the body, then front legs tucked under the chest, then the head on top.
     const leg = (x: number, top: number, h: number) => {
       ctx.fillStyle = furFill(ctx, spec);
-      ctx.beginPath();
-      ctx.roundRect(x - 26, top, 52, h, 24);
-      ctx.fill();
-      ctx.stroke();
+      const p = new Path2D();
+      p.roundRect(x - 26, top, 52, h, 24);
+      bodyPart(ctx, spec, p, x, top + h / 2, 26, h / 2);
       ctx.fillStyle = spec.paws ?? furFill(ctx, spec);
       ctx.beginPath();
       ctx.ellipse(x, top + h - 6, 27, 16, 0, 0, Math.PI * 2);
@@ -218,40 +380,30 @@ export function drawBody(ctx: CanvasRenderingContext2D, head: Head, spec: CatSpe
     leg(-190, 150, 130);
     leg(-115, 160, 120);
     ctx.fillStyle = furFill(ctx, spec);
-    ctx.beginPath();
-    ctx.ellipse(-95, 118, 150, 88, -0.05, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.stroke();
+    bodyPart(ctx, spec, ellipsePath(-95, 118, 150, 88, -0.05), -95, 118, 150, 88);
     // Front legs come out from under a rounded chest that sits below the chin
     leg(-42, 140, 142);
     leg(42, 140, 142);
     ctx.fillStyle = furFill(ctx, spec);
-    ctx.strokeStyle = INK;
-    ctx.lineWidth = 6;
-    ctx.beginPath();
-    ctx.ellipse(0, 128, 82, 74, 0, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.stroke();
-    if (belly) {
-      ctx.fillStyle = belly;
-      ctx.beginPath();
-      ctx.ellipse(0, 138, 42, 52, 0, 0, Math.PI * 2);
-      ctx.fill();
-    }
+    const chest = ellipsePath(0, 128, 82, 74);
+    ctx.fill(chest);
+    ctx.stroke(chest);
+    shadeBody(ctx, spec, chest, 0, 128, 82, 74);
+    fillBelly(0, 138, 42, 52);
   } else if (spec.pose === 'chonk') {
     // Very round, pear-shaped body under a small head
-    ctx.beginPath();
-    ctx.moveTo(-70, 40);
-    ctx.bezierCurveTo(-210, 120, -200, 330, -40, 340);
-    ctx.lineTo(40, 340);
-    ctx.bezierCurveTo(200, 330, 210, 120, 70, 40);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
+    const body = new Path2D();
+    body.moveTo(-70, 40);
+    body.bezierCurveTo(-210, 120, -200, 330, -40, 340);
+    body.lineTo(40, 340);
+    body.bezierCurveTo(200, 330, 210, 120, 70, 40);
+    body.closePath();
+    ctx.fill(body);
+    ctx.stroke(body);
     if (spec.bodyPatch) {
       // Tabby patch over the left flank
       ctx.save();
-      ctx.clip();
+      ctx.clip(body);
       ctx.fillStyle = spec.bodyPatch;
       ctx.beginPath();
       ctx.ellipse(-150, 170, 70, 130, 0.15, 0, Math.PI * 2);
@@ -266,9 +418,10 @@ export function drawBody(ctx: CanvasRenderingContext2D, head: Head, spec: CatSpe
       }
       ctx.restore();
     }
+    shadeBody(ctx, spec, body, 0, 200, 170, 140);
     ctx.fillStyle = furFill(ctx, spec);
-    ctx.strokeStyle = INK;
-    ctx.lineWidth = 6;
+    ctx.strokeStyle = line;
+    ctx.lineWidth = outline;
     for (const side of [-1, 1]) {
       ctx.beginPath();
       ctx.ellipse(side * 55, 335, 34, 20, 0, 0, Math.PI * 2);
@@ -277,48 +430,36 @@ export function drawBody(ctx: CanvasRenderingContext2D, head: Head, spec: CatSpe
     }
   } else if (spec.pose === 'loaf') {
     // Lying down, body stretching to the left
-    ctx.beginPath();
-    ctx.ellipse(-150, 55, 210, 95, 0, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.stroke();
-    if (belly) {
-      ctx.fillStyle = belly;
-      ctx.beginPath();
-      ctx.ellipse(-10, 105, 70, 40, 0, 0, Math.PI * 2);
-      ctx.fill();
-    }
+    const body = ellipsePath(-150, 55, 210, 95);
+    ctx.fill(body);
+    ctx.stroke(body);
+    shadeBody(ctx, spec, body, -150, 55, 210, 95);
+    fillBelly(-10, 105, 70, 40);
   } else if (spec.pose === 'stand') {
     // Upright, arms flung out to the sides (or raised overhead with armsUp)
     for (const side of [-1, 1]) {
       ctx.fillStyle = furFill(ctx, spec);
-      ctx.beginPath();
-      ctx.roundRect(side * 50 - 28, 250, 56, 150, 28);
-      ctx.fill();
-      ctx.stroke();
+      const p = new Path2D();
+      p.roundRect(side * 50 - 28, 250, 56, 150, 28);
+      bodyPart(ctx, spec, p, side * 50, 325, 28, 75);
     }
     ctx.fillStyle = furFill(ctx, spec);
-    ctx.beginPath();
-    ctx.ellipse(0, 190, 105, 140, 0, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.stroke();
-    if (belly) {
-      ctx.fillStyle = belly;
-      ctx.beginPath();
-      ctx.ellipse(0, 200, 60, 100, 0, 0, Math.PI * 2);
-      ctx.fill();
-    }
+    const body = ellipsePath(0, 190, 105, 140);
+    ctx.fill(body);
+    ctx.stroke(body);
+    shadeBody(ctx, spec, body, 0, 190, 105, 140);
+    fillBelly(0, 200, 60, 100);
     // Arms drawn over the body, rotated outward from the shoulders
     for (const side of [-1, 1]) {
       ctx.save();
       ctx.translate(side * 82, 120);
       ctx.rotate(side * (spec.armsUp ? 0.4 : 1.15));
       ctx.fillStyle = furFill(ctx, spec);
-      ctx.strokeStyle = INK;
-      ctx.lineWidth = 6;
-      ctx.beginPath();
-      ctx.roundRect(-24, -160, 48, 175, 24);
-      ctx.fill();
-      ctx.stroke();
+      ctx.strokeStyle = line;
+      ctx.lineWidth = outline;
+      const arm = new Path2D();
+      arm.roundRect(-24, -160, 48, 175, 24);
+      bodyPart(ctx, spec, arm, 0, -72, 24, 88);
       ctx.fillStyle = spec.paws ?? furFill(ctx, spec);
       ctx.beginPath();
       ctx.ellipse(0, -156, 28, 24, 0, 0, Math.PI * 2);
@@ -327,87 +468,72 @@ export function drawBody(ctx: CanvasRenderingContext2D, head: Head, spec: CatSpe
       ctx.restore();
     }
   } else {
-    ctx.beginPath();
-    ctx.ellipse(0, 140, 100, 90, 0, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.stroke();
-    if (belly) {
-      ctx.fillStyle = belly;
-      ctx.beginPath();
-      ctx.ellipse(0, 150, 50, 65, 0, 0, Math.PI * 2);
-      ctx.fill();
-    }
+    const body = ellipsePath(0, 140, 100, 90);
+    ctx.fill(body);
+    ctx.stroke(body);
+    shadeBody(ctx, spec, body, 0, 140, 100, 90);
+    fillBelly(0, 150, 50, 65);
+    if (inked()) chestTuft(ctx, belly ?? furFill(ctx, spec));
     ctx.fillStyle = spec.tuxedo ? '#ffffff' : furFill(ctx, spec);
     for (const side of [-1, 1]) {
       ctx.beginPath();
       ctx.ellipse(side * 38, 215, 28, 20, 0, 0, Math.PI * 2);
       ctx.fill();
       ctx.stroke();
+      if (inked()) toeLines(ctx, side * 38, 215);
     }
+  }
+  ctx.restore();
+}
+
+/** Inked sit pose: a fluffy bib just under the chin. */
+function chestTuft(ctx: CanvasRenderingContext2D, fill: Paint) {
+  ctx.save();
+  ctx.fillStyle = fill;
+  ctx.beginPath();
+  ctx.moveTo(-46, 70);
+  const n = 7;
+  for (let i = 0; i <= n; i++) {
+    const x = -46 + (92 * i) / n;
+    ctx.lineTo(x - 46 / n, 112 + (i % 2 ? 0 : 6) - Math.abs(x) * 0.25);
+    ctx.lineTo(x, 100 - Math.abs(x) * 0.25);
+  }
+  ctx.lineTo(46, 70);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+}
+
+/** Inked style: two little creases that split a paw into toes. */
+function toeLines(ctx: CanvasRenderingContext2D, x: number, y: number) {
+  ctx.save();
+  ctx.lineWidth = 3;
+  for (const dx of [-9, 9]) {
+    ctx.beginPath();
+    ctx.moveTo(x + dx, y + 4);
+    ctx.lineTo(x + dx, y + 18);
+    ctx.stroke();
   }
   ctx.restore();
 }
 
 export function drawHead(ctx: CanvasRenderingContext2D, spec: CatSpec) {
   spec.under?.(ctx);
-  ctx.strokeStyle = INK;
-  ctx.lineWidth = 6;
+  const line = lineOf(spec);
+  ctx.strokeStyle = line;
+  ctx.lineWidth = outlineWidth();
   ctx.lineJoin = 'round';
   ctx.lineCap = 'round';
 
-  if (!spec.noEars) {
-    // Ear tip: normal, big (Bingus, Floppa), or flattened sideways (wet / angry cats).
-    const tip = spec.flatEars ? [-150, -60] : spec.bigEars ? [-100, -172] : [-84, -138];
-    const inner = spec.flatEars ? [-128, -58] : spec.bigEars ? [-88, -138] : [-76, -108];
-    for (const side of [-1, 1]) {
-      ctx.fillStyle = spec.earColor ?? furFill(ctx, spec);
-      ctx.beginPath();
-      ctx.moveTo(side * -104, -30);
-      ctx.lineTo(side * tip[0], tip[1]);
-      ctx.lineTo(side * -22, -82);
-      ctx.closePath();
-      ctx.fill();
-      ctx.stroke();
-      ctx.fillStyle = spec.darkFur ? '#6a4a5a' : '#f4a8b8';
-      ctx.beginPath();
-      ctx.moveTo(side * -88, -50);
-      ctx.lineTo(side * inner[0], inner[1]);
-      ctx.lineTo(side * -44, -80);
-      ctx.closePath();
-      ctx.fill();
-      if (spec.tufts) {
-        ctx.strokeStyle = '#2a1e14';
-        ctx.lineWidth = 6;
-        ctx.beginPath();
-        ctx.moveTo(side * tip[0], tip[1]);
-        ctx.lineTo(side * (tip[0] - 6), tip[1] - 36);
-        ctx.moveTo(side * tip[0], tip[1]);
-        ctx.lineTo(side * (tip[0] + 12), tip[1] - 30);
-        ctx.stroke();
-        ctx.strokeStyle = INK;
-      }
-    }
-  }
+  if (!spec.noEars) drawEars(ctx, spec, line);
 
+  const head = headPath(spec);
   ctx.fillStyle = furFill(ctx, spec);
-  ctx.beginPath();
-  if (spec.spiky) {
-    const n = 22;
-    for (let i = 0; i <= n * 2; i++) {
-      const a = (i / (n * 2)) * Math.PI * 2;
-      const r = i % 2 === 0 ? 1.18 : 1;
-      ctx.lineTo(Math.cos(a) * 112 * r, Math.sin(a) * 94 * r);
-    }
-  } else {
-    ctx.ellipse(0, 0, 112, 94, 0, 0, Math.PI * 2);
-  }
-  ctx.fill();
-  ctx.stroke();
+  ctx.fill(head);
+  ctx.stroke(head);
 
   ctx.save();
-  ctx.beginPath();
-  ctx.ellipse(0, 0, 110, 92, 0, 0, Math.PI * 2);
-  ctx.clip();
+  ctx.clip(inked() ? headPath(spec, 2) : ellipsePath(0, 0, 110, 92));
   spec.cover?.(ctx);
   if (spec.tuxedo) {
     ctx.fillStyle = '#ffffff';
@@ -421,7 +547,14 @@ export function drawHead(ctx: CanvasRenderingContext2D, spec: CatSpec) {
   if (spec.muzzle) {
     ctx.fillStyle = spec.muzzle;
     ctx.beginPath();
-    ctx.ellipse(0, 45, 62, 42, 0, 0, Math.PI * 2);
+    if (inked()) {
+      // Two whisker pads and a little chin
+      ctx.ellipse(-27, 44, 38, 30, -0.2, 0, Math.PI * 2);
+      ctx.ellipse(27, 44, 38, 30, 0.2, 0, Math.PI * 2);
+      ctx.ellipse(0, 62, 26, 22, 0, 0, Math.PI * 2);
+    } else {
+      ctx.ellipse(0, 45, 62, 42, 0, 0, Math.PI * 2);
+    }
     ctx.fill();
   }
   if (spec.mask) {
@@ -439,9 +572,18 @@ export function drawHead(ctx: CanvasRenderingContext2D, spec: CatSpec) {
     ctx.lineWidth = 9;
     for (const x of [-26, 0, 26]) {
       ctx.beginPath();
-      ctx.moveTo(x * 1.1, -92);
-      ctx.lineTo(x * 0.8, -58);
-      ctx.stroke();
+      if (inked()) {
+        // Tapered, curved forehead stripes
+        ctx.moveTo(x * 1.1 - 5, -94);
+        ctx.quadraticCurveTo(x * 0.95, -72, x * 0.8, -54);
+        ctx.quadraticCurveTo(x * 0.95 + 4, -72, x * 1.1 + 5, -94);
+        ctx.fillStyle = spec.stripes;
+        ctx.fill();
+      } else {
+        ctx.moveTo(x * 1.1, -92);
+        ctx.lineTo(x * 0.8, -58);
+        ctx.stroke();
+      }
     }
     for (const side of [-1, 1]) {
       for (const y of [-10, 14]) {
@@ -452,24 +594,25 @@ export function drawHead(ctx: CanvasRenderingContext2D, spec: CatSpec) {
       }
     }
   }
+  if (inked()) {
+    const { w = 1, h = 1 } = spec.head ?? {};
+    const lit = new Path2D();
+    lit.ellipse(0, 0, 112 * w, 94 * h, 0, 0, Math.PI * 2);
+    shade(ctx, spec, head, offsetShadow(lit, -16, -20, 0.97), [-46, -50, 90]);
+  }
   ctx.restore();
 
-  ctx.strokeStyle = INK;
-  ctx.lineWidth = 6;
+  if (inked()) cheekFur(ctx, spec, line);
+
+  ctx.strokeStyle = line;
   for (const side of [-1, 1]) drawEye(ctx, side * 42, -4, side, spec);
 
-  ctx.fillStyle = '#f07890';
-  ctx.beginPath();
-  ctx.moveTo(-10, 20);
-  ctx.lineTo(10, 20);
-  ctx.lineTo(0, 31);
-  ctx.closePath();
-  ctx.fill();
-
+  drawNose(ctx, line);
   drawMouth(ctx, spec.mouth, spec.darkFur);
 
   ctx.strokeStyle = spec.darkFur ? '#ffffff' : INK;
-  ctx.lineWidth = 3;
+  ctx.lineWidth = inked() ? 2 : 3;
+  if (inked()) ctx.globalAlpha = 0.8;
   for (const side of [-1, 1]) {
     for (const [y0, y1] of [
       [26, 14],
@@ -478,10 +621,12 @@ export function drawHead(ctx: CanvasRenderingContext2D, spec: CatSpec) {
     ]) {
       ctx.beginPath();
       ctx.moveTo(side * 58, y0);
-      ctx.lineTo(side * 138, y1);
+      if (inked()) ctx.quadraticCurveTo(side * 100, (y0 + y1) / 2 - 6, side * 142, y1);
+      else ctx.lineTo(side * 138, y1);
       ctx.stroke();
     }
   }
+  ctx.globalAlpha = 1;
 
   if (spec.blush) {
     ctx.fillStyle = 'rgba(255, 110, 140, 0.5)';
@@ -518,10 +663,123 @@ export function drawHead(ctx: CanvasRenderingContext2D, spec: CatSpec) {
   spec.over?.(ctx);
 }
 
+function drawEars(ctx: CanvasRenderingContext2D, spec: CatSpec, line: string) {
+  // Ear tip: normal, big (Bingus, Floppa), or flattened sideways (wet / angry cats).
+  const tip = spec.flatEars ? [-150, -60] : spec.bigEars ? [-100, -172] : [-84, -138];
+  const inner = spec.flatEars ? [-128, -58] : spec.bigEars ? [-88, -138] : [-76, -108];
+  for (const side of [-1, 1]) {
+    // In head-local x with the side folded in; `bend` bows the outer edge out and the inner edge in.
+    const ear = (base0: number[], peak: number[], base1: number[], bend: number) => {
+      ctx.beginPath();
+      ctx.moveTo(side * base0[0], base0[1]);
+      if (inked()) {
+        ctx.quadraticCurveTo(side * ((base0[0] + peak[0]) / 2 - bend), (base0[1] + peak[1]) / 2 - bend * 0.3, side * peak[0], peak[1]);
+        ctx.quadraticCurveTo(side * ((peak[0] + base1[0]) / 2 + bend * 0.6), (peak[1] + base1[1]) / 2 - bend * 0.5, side * base1[0], base1[1]);
+      } else {
+        ctx.lineTo(side * peak[0], peak[1]);
+        ctx.lineTo(side * base1[0], base1[1]);
+      }
+      ctx.closePath();
+    };
+    ctx.fillStyle = spec.earColor ?? furFill(ctx, spec);
+    ear([-104, -30], tip, [-22, -82], 14);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = spec.darkFur ? '#6a4a5a' : '#f4a8b8';
+    ear([-88, -50], inner, [-44, -80], 8);
+    ctx.fill();
+    if (inked()) {
+      // Fur strands growing out of the inner ear
+      ctx.save();
+      ctx.strokeStyle = spec.darkFur ? 'rgba(220,210,230,0.7)' : 'rgba(255,255,255,0.9)';
+      ctx.lineWidth = 2.5;
+      for (const k of [0.25, 0.5, 0.75]) {
+        const x0 = -88 + (-44 + 88) * k;
+        const y0 = -50 + (-80 + 50) * k;
+        ctx.beginPath();
+        ctx.moveTo(side * x0, y0);
+        ctx.quadraticCurveTo(side * (x0 + (inner[0] - x0) * 0.3 + 6), y0 + (inner[1] - y0) * 0.35, side * (x0 + (inner[0] - x0) * 0.6), y0 + (inner[1] - y0) * 0.6);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+    if (spec.tufts) {
+      ctx.save();
+      ctx.strokeStyle = '#2a1e14';
+      ctx.lineWidth = inked() ? 4 : 6;
+      ctx.beginPath();
+      ctx.moveTo(side * tip[0], tip[1]);
+      ctx.lineTo(side * (tip[0] - 6), tip[1] - 36);
+      ctx.moveTo(side * tip[0], tip[1]);
+      ctx.lineTo(side * (tip[0] + 12), tip[1] - 30);
+      if (inked()) {
+        ctx.moveTo(side * tip[0], tip[1]);
+        ctx.lineTo(side * (tip[0] + 3), tip[1] - 44);
+      }
+      ctx.stroke();
+      ctx.restore();
+    }
+  }
+  ctx.strokeStyle = line;
+  ctx.lineWidth = outlineWidth();
+}
+
+/** Inked style: a few fine fur strokes on the cheeks and crown. */
+function cheekFur(ctx: CanvasRenderingContext2D, spec: CatSpec, line: string) {
+  const { w = 1 } = spec.head ?? {};
+  ctx.save();
+  ctx.strokeStyle = line;
+  ctx.globalAlpha = 0.45;
+  ctx.lineWidth = 2.5;
+  for (const side of [-1, 1]) {
+    for (const [x, y, len] of [
+      [96, 26, 16],
+      [90, 46, 14],
+    ]) {
+      ctx.beginPath();
+      ctx.moveTo(side * x * w, y);
+      ctx.quadraticCurveTo(side * (x * w - len * 0.6), y + 3, side * (x * w - len), y + 10);
+      ctx.stroke();
+    }
+  }
+  for (const x of [-10, 10]) {
+    ctx.beginPath();
+    ctx.moveTo(x, -86);
+    ctx.lineTo(x * 0.6, -72);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function drawNose(ctx: CanvasRenderingContext2D, line: string) {
+  ctx.fillStyle = '#f07890';
+  ctx.beginPath();
+  if (inked()) {
+    ctx.moveTo(-12, 19);
+    ctx.quadraticCurveTo(0, 14, 12, 19);
+    ctx.quadraticCurveTo(8, 29, 0, 31);
+    ctx.quadraticCurveTo(-8, 29, -12, 19);
+    ctx.fill();
+    ctx.strokeStyle = line;
+    ctx.lineWidth = 2.5;
+    ctx.stroke();
+    ctx.fillStyle = 'rgba(255,255,255,0.7)';
+    ctx.beginPath();
+    ctx.ellipse(-4, 19, 4, 2.2, 0, 0, Math.PI * 2);
+    ctx.fill();
+  } else {
+    ctx.moveTo(-10, 20);
+    ctx.lineTo(10, 20);
+    ctx.lineTo(0, 31);
+    ctx.closePath();
+    ctx.fill();
+  }
+}
+
 export function drawEye(ctx: CanvasRenderingContext2D, x: number, y: number, side: number, spec: CatSpec) {
   const line = spec.darkFur ? '#f4f0ff' : INK;
   ctx.strokeStyle = line;
-  ctx.lineWidth = 6;
+  ctx.lineWidth = inked() ? 4.5 : 6;
   switch (spec.eyes) {
     case 'happy':
       ctx.beginPath();
@@ -615,8 +873,10 @@ export function drawEye(ctx: CanvasRenderingContext2D, x: number, y: number, sid
         ctx.beginPath();
         ctx.arc(x, y, 22, 0, Math.PI * 2);
         ctx.fill();
+        irisShadow(ctx, x, y, 22, 22);
       }
       ctx.stroke();
+      upperLid(ctx, x, y, 28, 28, line);
       ctx.fillStyle = INK;
       ctx.beginPath();
       if (spec.slit) ctx.ellipse(x, y, 5, 18, 0, 0, Math.PI * 2);
@@ -700,6 +960,7 @@ export function drawEye(ctx: CanvasRenderingContext2D, x: number, y: number, sid
     ctx.beginPath();
     ctx.ellipse(x, y + 1, rx - 4, ry - 3, 0, 0, Math.PI * 2);
     ctx.fill();
+    irisShadow(ctx, x, y + 1, rx - 4, ry - 3);
   }
   ctx.fillStyle = INK;
   ctx.beginPath();
@@ -748,6 +1009,7 @@ export function drawEye(ctx: CanvasRenderingContext2D, x: number, y: number, sid
   ctx.beginPath();
   ctx.ellipse(x, y, rx, ry, 0, 0, Math.PI * 2);
   ctx.stroke();
+  if (spec.eyes !== 'grumpy' && spec.eyes !== 'half') upperLid(ctx, x, y, rx, ry, line);
 
   if (teary) {
     ctx.strokeStyle = '#8fd4ff';
@@ -764,9 +1026,37 @@ export function drawEye(ctx: CanvasRenderingContext2D, x: number, y: number, sid
   }
 }
 
+/** Inked style: the top of the iris sits in the lid's shadow. */
+function irisShadow(ctx: CanvasRenderingContext2D, x: number, y: number, rx: number, ry: number) {
+  if (!inked()) return;
+  ctx.save();
+  ctx.beginPath();
+  ctx.ellipse(x, y, rx, ry, 0, 0, Math.PI * 2);
+  ctx.clip();
+  const g = ctx.createLinearGradient(0, y - ry, 0, y + ry * 0.2);
+  g.addColorStop(0, 'rgba(20,10,30,0.45)');
+  g.addColorStop(1, 'rgba(20,10,30,0)');
+  ctx.fillStyle = g;
+  ctx.fillRect(x - rx, y - ry, rx * 2, ry * 1.2);
+  ctx.restore();
+}
+
+/** Inked style: a heavy upper lid line over a thin eye outline. */
+function upperLid(ctx: CanvasRenderingContext2D, x: number, y: number, rx: number, ry: number, line: string) {
+  if (!inked()) return;
+  ctx.save();
+  ctx.strokeStyle = line;
+  ctx.lineWidth = 8;
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.ellipse(x, y, rx, ry, 0, Math.PI * 1.1, Math.PI * 1.9);
+  ctx.stroke();
+  ctx.restore();
+}
+
 export function drawMouth(ctx: CanvasRenderingContext2D, mouth: Mouth, darkFur?: boolean) {
   ctx.strokeStyle = darkFur ? '#f4f0ff' : INK;
-  ctx.lineWidth = 5;
+  ctx.lineWidth = inked() ? 4 : 5;
   switch (mouth) {
     case 'w':
       ctx.beginPath();

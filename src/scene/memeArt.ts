@@ -34,6 +34,8 @@ export const MEME_SPECS: Record<string, CatSpec> = {
     eyes: 'grumpy',
     iris: '#7cc6ee',
     mouth: 'frown',
+    // Wide, flat face with heavy jowls
+    head: { w: 1.08, h: 0.92, jowl: 0.2, fluff: 0.1 },
     pose: 'sit',
     s: 1.05,
     dy: -25,
@@ -134,6 +136,7 @@ export const MEME_SPECS: Record<string, CatSpec> = {
     fur: '#f6f3ee',
     eyes: 'dot',
     mouth: 'pop',
+    head: { h: 1.03, fluff: 0.05 },
     s: 1.2,
     dy: 15,
     cover: (ctx) => {
@@ -152,6 +155,8 @@ export const MEME_SPECS: Record<string, CatSpec> = {
     iris: '#a9c3d6',
     iris2: '#c49a5a',
     mouth: 'gasp',
+    // Round, fluffy and jowly
+    head: { h: 1.04, jowl: 0.12, fluff: 0.13 },
     pose: 'chonk',
     bodyPatch: '#fbfbf8',
     s: 0.76,
@@ -190,6 +195,7 @@ export const MEME_SPECS: Record<string, CatSpec> = {
     eyes: 'normal',
     iris: '#8a9a6a',
     mouth: 'w',
+    head: { w: 1.1, h: 0.9, jowl: 0.08, fluff: 0.05 },
     pose: 'loaf',
     s: 0.75,
     dx: 70,
@@ -492,6 +498,8 @@ export const MEME_SPECS: Record<string, CatSpec> = {
     tufts: true,
     bigEars: true,
     muzzle: '#f4e6d2',
+    // Short-haired, broad and heavy-jawed
+    head: { w: 1.05, jowl: 0.14, fluff: 0.03 },
     pose: 'sit',
     dy: -20,
   },
