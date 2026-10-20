@@ -11,7 +11,7 @@ export const GENERATOR_VERSION = 1;
 const RARE_TRAITS: Record<Rarity, number> = { N: 0, R: 0, SR: 1, SSR: 2 };
 
 /** Order in which Traits are tried when naming a cat: the most eye-catching first. */
-const NAME_ORDER: TraitKey[] = ['headwear', 'held', 'face', 'eyes', 'expression'];
+const NAME_ORDER: TraitKey[] = ['headwear', 'held', 'face', 'body', 'eyes', 'expression'];
 
 const cache = new Map<number, GeneratedCat>();
 let byRarity: Record<Rarity, number[]> | undefined;

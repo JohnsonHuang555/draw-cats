@@ -1,4 +1,4 @@
-export const TRAIT_KEYS = ['fur', 'eyes', 'expression', 'headwear', 'face', 'held', 'background'] as const;
+export const TRAIT_KEYS = ['fur', 'eyes', 'expression', 'headwear', 'face', 'body', 'held', 'background'] as const;
 export type TraitKey = (typeof TRAIT_KEYS)[number];
 
 export interface TraitValue {
@@ -21,6 +21,7 @@ export const TRAIT_LABELS: Record<TraitKey, string> = {
   expression: '表情',
   headwear: '頭飾',
   face: '臉部',
+  body: '配件',
   held: '手持物',
   background: '背景',
 };
@@ -38,10 +39,13 @@ export const TRAITS: Record<TraitKey, TraitValue[]> = {
     { id: 'tuxedo', label: '賓士貓', weight: 2 },
     { id: 'calico', label: '三花貓', weight: 2 },
     { id: 'siamese', label: '暹羅貓' },
+    { id: 'cream', label: '奶油貓' },
+    { id: 'blue', label: '藍灰貓' },
     { id: 'gold', label: '黃金貓', rare: true },
     { id: 'ghost', label: '幽靈貓', rare: true },
     { id: 'galaxy', label: '銀河貓', rare: true },
     { id: 'rainbow', label: '彩虹毛貓', rare: true },
+    { id: 'lava', label: '熔岩貓', rare: true },
   ],
   eyes: [
     { id: 'round', label: '圓眼', weight: 3 },
@@ -63,6 +67,8 @@ export const TRAITS: Record<TraitKey, TraitValue[]> = {
     { id: 'beanie', label: '毛帽', prefix: '戴毛帽的' },
     { id: 'ribbon', label: '蝴蝶結', prefix: '綁蝴蝶結的' },
     { id: 'party', label: '派對帽', prefix: '戴派對帽的' },
+    { id: 'straw', label: '草帽', prefix: '戴草帽的' },
+    { id: 'catears', label: '貓耳髮箍', prefix: '戴貓耳髮箍的' },
     { id: 'crown', label: '皇冠', rare: true, prefix: '戴皇冠的' },
     { id: 'halo', label: '天使光環', rare: true, prefix: '天使' },
     { id: 'wizard', label: '巫師帽', rare: true, prefix: '戴巫師帽的' },
@@ -73,19 +79,32 @@ export const TRAITS: Record<TraitKey, TraitValue[]> = {
     { id: 'sunglasses', label: '墨鏡', rare: true, prefix: '戴墨鏡的' },
     { id: 'pixel', label: '像素眼鏡', rare: true, prefix: '戴像素眼鏡的' },
   ],
+  body: [
+    { id: 'none', label: '無', weight: 4 },
+    { id: 'scarf', label: '圍巾', prefix: '圍圍巾的' },
+    { id: 'bowtie', label: '領結', prefix: '打領結的' },
+    { id: 'bell', label: '鈴鐺項圈', prefix: '戴鈴鐺的' },
+    { id: 'cape', label: '披風', rare: true, prefix: '披著披風的' },
+    { id: 'wings', label: '天使翅膀', rare: true, prefix: '長翅膀的' },
+  ],
   held: [
     { id: 'none', label: '無', weight: 4 },
     { id: 'fish', label: '小魚', prefix: '叼著魚的' },
     { id: 'yarn', label: '毛線球', prefix: '抱毛線球的' },
+    { id: 'donut', label: '甜甜圈', prefix: '拿甜甜圈的' },
     { id: 'boba', label: '珍珠奶茶', rare: true, prefix: '喝珍奶的' },
     { id: 'saber', label: '光劍', rare: true, prefix: '拿光劍的' },
+    { id: 'wand', label: '魔杖', rare: true, prefix: '拿魔杖的' },
   ],
   background: [
     { id: 'solid', label: '素色', weight: 2 },
     { id: 'dots', label: '點點' },
     { id: 'stripes', label: '條紋' },
+    { id: 'plaid', label: '格紋' },
     { id: 'cosmic', label: '宇宙', rare: true },
     { id: 'sunburst', label: '光芒', rare: true },
+    { id: 'sakura', label: '櫻花', rare: true },
+    { id: 'neon', label: '霓虹', rare: true },
   ],
 };
 
