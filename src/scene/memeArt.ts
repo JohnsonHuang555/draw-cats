@@ -97,21 +97,23 @@ export const MEME_SPECS: Record<string, CatSpec> = {
     },
   },
   'sr-chipi': {
-    // Blurry close-up of a brown tabby nodding along, big eyes looking up
-    fur: '#8a7a6a',
-    stripes: '#4e4236',
-    muzzle: '#d8c0a0',
+    // Grey-brown tabby kitten pressed up to the camera inside a metal cat feeder, looking up,
+    // head tipped; it sways its head from side to side to the song
+    fur: '#7c726a',
+    stripes: '#3e362e',
+    muzzle: '#c89a6a',
+    earColor: '#3a3430',
     eyes: 'wide',
-    iris: '#9a8a50',
+    iris: '#8a6838',
     bigPupil: true,
     mouth: 'w',
-    tilt: -0.18,
-    s: 1.35,
-    dy: 40,
-    front: (ctx, a) => {
-      notes(ctx, a, ['♪', '♫', '♪']);
-      bigText(ctx, 'CHIPI CHIPI', a.x + a.w / 2, a.y + 40, 40, '#ffe14a', 0);
-    },
+    tilt: -0.2,
+    s: 1.6,
+    dx: 20,
+    dy: 55,
+    motion: { kind: 'shake', period: 0.8 },
+    back: (ctx, a) => feederBg(ctx, a),
+    front: (ctx, a) => bigText(ctx, 'CHIPI CHIPI', a.x + a.w / 2, a.y + 40, 40, '#ffe14a', 0),
   },
   'sr-happy': {
     // Small grey tabby-and-white kitten standing up, arms flung wide, staring straight ahead
@@ -1125,6 +1127,46 @@ function furEmoji(ctx: CanvasRenderingContext2D, char: string, x: number, y: num
   ctx.shadowBlur = 12;
   ctx.drawImage(off, -box / 2, -box / 2);
   ctx.restore();
+}
+
+/** Inside a metal cat feeder: grey walls, two silver rims slanting in from the top, a pile of kibble. */
+function feederBg(ctx: CanvasRenderingContext2D, a: ArtArea) {
+  const g = ctx.createLinearGradient(0, a.y, 0, a.y + a.h);
+  g.addColorStop(0, '#d8dce2');
+  g.addColorStop(0.6, '#9aa0a8');
+  g.addColorStop(1, '#5a6068');
+  ctx.fillStyle = g;
+  ctx.fillRect(a.x, a.y, a.w, a.h);
+  // Darker opening behind the cat
+  ctx.fillStyle = 'rgba(40,40,48,0.55)';
+  ctx.beginPath();
+  ctx.moveTo(a.x + 70, a.y);
+  ctx.lineTo(a.x + a.w - 40, a.y);
+  ctx.lineTo(a.x + a.w - 120, a.y + a.h);
+  ctx.lineTo(a.x + 170, a.y + a.h);
+  ctx.closePath();
+  ctx.fill();
+  // Silver rims
+  ctx.strokeStyle = '#eef0f4';
+  ctx.lineWidth = 10;
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(a.x + 40, a.y - 10);
+  ctx.quadraticCurveTo(a.x + 120, a.y + 160, a.x + 190, a.y + 300);
+  ctx.moveTo(a.x + a.w + 10, a.y + 20);
+  ctx.lineTo(a.x + a.w - 70, a.y + 140);
+  ctx.stroke();
+  // Kibble heaped in the bottom-left corner
+  const rand = seededRandom('kibble');
+  for (let i = 0; i < 70; i++) {
+    const t = rand();
+    const x = a.x + 20 + t * 170 + rand() * 20;
+    const y = a.y + a.h - 10 - rand() * (60 - t * 40);
+    ctx.fillStyle = rand() < 0.5 ? '#a8784a' : '#c8965e';
+    ctx.beginPath();
+    ctx.ellipse(x, y, 9, 6, rand() * Math.PI, 0, Math.PI * 2);
+    ctx.fill();
+  }
 }
 
 /** Red bell on a collar, hanging below the chin. */
