@@ -131,7 +131,8 @@ function inked() {
 /**
  * Card Art motion:
  * - 'spin' turns the whole cat about a vertical axis, showing its mirrored back half the time
- * - 'scene' hands the spec's `back` scene the time into each bout, to animate itself (Bongo, Nyan)
+ * - 'scene' hands the spec's `back` and `front` scenes the time into each bout, to animate
+ *   themselves (Bongo's drumming, Nyan's flight, 香蕉貓's tears)
  * - 'jump' bounces the whole cat, one hop per period
  * - 'mouth' shows the spec's mouth for the first half of each period and `mouth` for the rest
  * - 'nod' bobs the head up and down; 'shake' turns it from side to side; 'sway' swings it along a
@@ -348,7 +349,7 @@ export function drawCat(ctx: CanvasRenderingContext2D, spec: CatSpec, a: ArtArea
   ctx.restore();
 
   ctx.save();
-  spec.front?.(ctx, a, head);
+  spec.front?.(ctx, a, head, motion?.kind === 'scene' ? bout : undefined);
   ctx.restore();
 }
 

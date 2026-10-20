@@ -107,9 +107,9 @@ export const MEME_SPECS: Record<string, CatSpec> = {
     iris: '#8a6838',
     mouth: 'w',
     tilt: -0.2,
-    s: 1.6,
+    s: 1.3,
     dx: 20,
-    dy: 55,
+    dy: 40,
     motion: { kind: 'sway', period: 1 },
     back: (ctx, a) => feederBg(ctx, a),
     front: (ctx, a) => bigText(ctx, 'CHIPI CHIPI', a.x + a.w / 2, a.y + 40, 40, '#ffe14a', 0),
@@ -310,7 +310,8 @@ export const MEME_SPECS: Record<string, CatSpec> = {
     },
   },
   'r-banana': {
-    // Crying kitten face poking out of a full banana suit, little paws sticking out
+    // Crying kitten face poking out of a full banana suit, little paws sticking out; tears gush
+    // out of both eyes in arcs, like the meme
     fur: '#e2d2bc',
     eyes: 'teary',
     iris: '#2a2030',
@@ -318,10 +319,12 @@ export const MEME_SPECS: Record<string, CatSpec> = {
     noEars: true,
     s: 0.52,
     dy: -20,
+    motion: { kind: 'scene', period: 0.6 },
     back: (ctx, a, head) => {
       solidBg(ctx, a, '#f6f4ee');
       bananaSuit(ctx, head);
     },
+    front: (ctx, a, head, bout) => tearFountains(ctx, a, head, bout === undefined ? 0 : bout / 0.6),
   },
   'r-vibing': {
     // White cat bobbing to the beat
@@ -1168,6 +1171,45 @@ function feederBg(ctx: CanvasRenderingContext2D, a: ArtArea) {
     ctx.ellipse(x, y, 9, 6, rand() * Math.PI, 0, Math.PI * 2);
     ctx.fill();
   }
+}
+
+/**
+ * Two streams of tears arcing up and out of the eyes and down to the bottom edge, with drops
+ * running along them. `flow` (0 to 1, looping) moves the drops.
+ */
+function tearFountains(ctx: CanvasRenderingContext2D, a: ArtArea, head: Head, flow: number) {
+  const bottom = a.y + a.h + 20;
+  ctx.save();
+  ctx.lineCap = 'round';
+  for (const side of [-1, 1]) {
+    const ex = head.x + side * 42 * head.s;
+    const ey = head.y + 10 * head.s;
+    // Up and out, then down to the bottom edge
+    const cx = ex + side * 120;
+    const cy = ey - 90;
+    const fx = ex + side * 165;
+    const at = (u: number) => {
+      const v = 1 - u;
+      return [v * v * ex + 2 * v * u * cx + u * u * fx, v * v * ey + 2 * v * u * cy + u * u * bottom];
+    };
+    ctx.strokeStyle = 'rgba(110, 190, 255, 0.75)';
+    ctx.lineWidth = 16;
+    ctx.beginPath();
+    ctx.moveTo(ex, ey);
+    ctx.quadraticCurveTo(cx, cy, fx, bottom);
+    ctx.stroke();
+    ctx.strokeStyle = 'rgba(220, 242, 255, 0.85)';
+    ctx.lineWidth = 5;
+    ctx.stroke();
+    ctx.fillStyle = '#e8f6ff';
+    for (let k = 0; k < 5; k++) {
+      const [x, y] = at((k / 5 + flow) % 1);
+      ctx.beginPath();
+      ctx.arc(x, y, 6, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+  ctx.restore();
 }
 
 /** Red bell on a collar, hanging below the chin. */
