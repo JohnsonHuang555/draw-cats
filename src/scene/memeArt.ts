@@ -623,7 +623,7 @@ export const MEME_SPECS: Record<string, CatSpec> = {
       ctx.fill();
     },
     back: (ctx, a) => solidBg(ctx, a, '#120e14'),
-    front: (ctx, a) => thumbsUpEmoji(ctx, a.x + 95, a.y + a.h - 105),
+    front: (ctx, a) => thumbsUpPaw(ctx, a.x + 95, a.y + a.h - 105, '#f6f2ec'),
   },
   'sr-thurston': {
     // Fluffy white cat throwing its head back in a long howl, dark eyes wide open
@@ -1047,58 +1047,109 @@ function ceilingHole(ctx: CanvasRenderingContext2D, head: Head) {
   ctx.closePath();
 }
 
-/** The yellow 👍 emoji. */
-function thumbsUpEmoji(ctx: CanvasRenderingContext2D, x: number, y: number) {
-  ctx.fillStyle = '#ffcc33';
-  ctx.strokeStyle = '#a0701a';
-  ctx.lineWidth = 5;
+/** The cat's own paw giving a thumbs up, its forearm rising from the bottom edge. */
+function thumbsUpPaw(ctx: CanvasRenderingContext2D, x: number, y: number, fur: string) {
+  ctx.save();
+  ctx.fillStyle = fur;
+  ctx.strokeStyle = INK;
+  ctx.lineWidth = 6;
   ctx.lineJoin = 'round';
-  // Thumb
+  ctx.lineCap = 'round';
+  // Forearm
   ctx.beginPath();
-  ctx.moveTo(x - 30, y - 10);
-  ctx.bezierCurveTo(x - 40, y - 70, x - 10, y - 110, x + 8, y - 96);
-  ctx.bezierCurveTo(x + 26, y - 84, x + 10, y - 40, x + 18, y - 14);
+  ctx.moveTo(x - 34, y + 150);
+  ctx.quadraticCurveTo(x - 40, y + 80, x - 30, y + 40);
+  ctx.lineTo(x + 34, y + 40);
+  ctx.quadraticCurveTo(x + 44, y + 90, x + 40, y + 150);
+  ctx.fill();
+  ctx.stroke();
+  // Thumb, leaning back a little; the fist covers its root
+  ctx.beginPath();
+  ctx.moveTo(x - 40, y);
+  ctx.bezierCurveTo(x - 48, y - 50, x - 42, y - 96, x - 18, y - 98);
+  ctx.bezierCurveTo(x + 4, y - 100, x + 8, y - 60, x + 4, y);
   ctx.closePath();
   ctx.fill();
   ctx.stroke();
-  // Fist with four curled fingers
+  // Fist: the knuckles of four curled fingers scallop its right side
+  const top = y - 16;
+  const bottom = y + 56;
+  const knuckle = (bottom - top) / 4;
   ctx.beginPath();
-  ctx.roundRect(x - 50, y - 18, 110, 100, 26);
+  ctx.moveTo(x - 44, y - 10);
+  ctx.quadraticCurveTo(x - 52, y + 34, x - 30, bottom);
+  ctx.lineTo(x + 26, bottom);
+  for (let i = 0; i < 4; i++) {
+    const yb = bottom - knuckle * i;
+    ctx.quadraticCurveTo(x + 60, yb - knuckle / 2, x + 26, yb - knuckle);
+  }
+  ctx.quadraticCurveTo(x - 10, top - 10, x - 44, y - 10);
+  ctx.closePath();
   ctx.fill();
   ctx.stroke();
-  ctx.lineWidth = 4;
-  for (const dy of [8, 32, 56]) {
+  // Creases between the curled fingers
+  ctx.lineWidth = 3;
+  for (let i = 1; i < 4; i++) {
+    const yb = bottom - knuckle * i;
     ctx.beginPath();
-    ctx.moveTo(x + 20, y + dy);
-    ctx.lineTo(x + 58, y + dy);
+    ctx.moveTo(x + 28, yb);
+    ctx.lineTo(x + 8, yb + 2);
     ctx.stroke();
   }
-  ctx.fillStyle = 'rgba(255,255,255,0.45)';
-  ctx.beginPath();
-  ctx.ellipse(x - 26, y + 10, 10, 24, 0.2, 0, Math.PI * 2);
-  ctx.fill();
+  ctx.restore();
 }
 
-/** A yellow emoji fist pointing at the viewer. */
+/** The yellow 👉 emoji, pointing right at the cat, its wrist off the left edge. */
 function pointingHand(ctx: CanvasRenderingContext2D, x: number, y: number) {
-  ctx.fillStyle = '#ffcc33';
-  ctx.strokeStyle = '#a0701a';
+  ctx.save();
+  const g = ctx.createLinearGradient(0, y - 50, 0, y + 70);
+  g.addColorStop(0, '#ffdc5a');
+  g.addColorStop(1, '#f2b01e');
+  ctx.fillStyle = g;
+  ctx.strokeStyle = '#a86c10';
   ctx.lineWidth = 5;
-  ctx.beginPath();
-  ctx.roundRect(x - 70, y - 40, 100, 90, 30);
-  ctx.fill();
-  ctx.stroke();
-  ctx.beginPath();
-  ctx.roundRect(x + 10, y - 34, 90, 30, 15);
-  ctx.fill();
-  ctx.stroke();
-  ctx.lineWidth = 3;
-  for (const dy of [8, 26]) {
+  ctx.lineJoin = 'round';
+  ctx.lineCap = 'round';
+  // Three curled fingers stacked under the index finger; the back of the hand covers their roots
+  for (const [dy, len] of [
+    [4, 66],
+    [28, 60],
+    [52, 50],
+  ]) {
     ctx.beginPath();
-    ctx.moveTo(x - 30, y + dy);
-    ctx.lineTo(x + 24, y + dy);
+    ctx.roundRect(x - 20, y + dy - 12, len, 26, 13);
+    ctx.fill();
     ctx.stroke();
   }
+  // Index finger
+  ctx.beginPath();
+  ctx.roundRect(x - 10, y - 44, 124, 30, 15);
+  ctx.fill();
+  ctx.stroke();
+  // Back of the hand and the wrist
+  ctx.beginPath();
+  ctx.moveTo(x - 150, y - 30);
+  ctx.lineTo(x - 50, y - 42);
+  ctx.quadraticCurveTo(x + 4, y - 46, x + 12, y - 12);
+  ctx.quadraticCurveTo(x + 16, y + 44, x - 10, y + 66);
+  ctx.quadraticCurveTo(x - 40, y + 78, x - 70, y + 62);
+  ctx.lineTo(x - 150, y + 54);
+  ctx.fill();
+  ctx.stroke();
+  // Thumb folded across the curled fingers
+  ctx.beginPath();
+  ctx.moveTo(x - 44, y - 14);
+  ctx.quadraticCurveTo(x + 10, y - 18, x + 36, y + 2);
+  ctx.quadraticCurveTo(x + 44, y + 18, x + 26, y + 20);
+  ctx.quadraticCurveTo(x - 10, y + 16, x - 44, y + 16);
+  ctx.fill();
+  ctx.stroke();
+  // Shine along the index finger
+  ctx.fillStyle = 'rgba(255,255,255,0.55)';
+  ctx.beginPath();
+  ctx.ellipse(x + 62, y - 36, 34, 4, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
 }
 
 /** Red bell on a collar, hanging below the chin. */
