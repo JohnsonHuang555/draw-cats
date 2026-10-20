@@ -256,13 +256,6 @@ function ellipsePath(x: number, y: number, rx: number, ry: number, rot = 0): Pat
   return p;
 }
 
-/** Fills and outlines a path, then shades it (inked style). */
-function bodyPart(ctx: CanvasRenderingContext2D, spec: CatSpec, part: Path2D, x: number, y: number, rx: number, ry: number) {
-  ctx.fill(part);
-  ctx.stroke(part);
-  shadeBody(ctx, spec, part, x, y, rx, ry);
-}
-
 export function drawCat(ctx: CanvasRenderingContext2D, spec: CatSpec, a: ArtArea) {
   const s = spec.s ?? 1;
   const head = { x: a.x + a.w / 2 + (spec.dx ?? 0), y: a.y + a.h * 0.5 + (spec.dy ?? 0), s };
@@ -347,30 +340,28 @@ export function furFill(ctx: CanvasRenderingContext2D, spec: CatSpec): Paint {
 
 export function drawBody(ctx: CanvasRenderingContext2D, head: Head, spec: CatSpec) {
   const s = head.s;
-  const line = lineOf(spec);
-  const outline = outlineWidth();
   ctx.save();
   ctx.translate(head.x, head.y);
   ctx.scale(s, s);
+  if (inked()) {
+    drawInkedBody(ctx, spec);
+    ctx.restore();
+    return;
+  }
   ctx.fillStyle = furFill(ctx, spec);
-  ctx.strokeStyle = line;
-  ctx.lineWidth = outline;
-  if (inked()) ctx.lineJoin = 'round';
+  ctx.strokeStyle = INK;
+  ctx.lineWidth = 6;
   const belly = spec.belly ?? (spec.tuxedo ? '#ffffff' : spec.muzzle);
-  const fillBelly = (x: number, y: number, rx: number, ry: number) => {
-    if (!belly) return;
-    ctx.fillStyle = belly;
-    ctx.fill(ellipsePath(x, y, rx, ry));
-  };
 
   if (spec.pose === 'quad') {
     // Standing on all fours in three-quarter view. Draw order hides every leg root:
     // hind legs, then the body, then front legs tucked under the chest, then the head on top.
     const leg = (x: number, top: number, h: number) => {
       ctx.fillStyle = furFill(ctx, spec);
-      const p = new Path2D();
-      p.roundRect(x - 26, top, 52, h, 24);
-      bodyPart(ctx, spec, p, x, top + h / 2, 26, h / 2);
+      ctx.beginPath();
+      ctx.roundRect(x - 26, top, 52, h, 24);
+      ctx.fill();
+      ctx.stroke();
       ctx.fillStyle = spec.paws ?? furFill(ctx, spec);
       ctx.beginPath();
       ctx.ellipse(x, top + h - 6, 27, 16, 0, 0, Math.PI * 2);
@@ -380,30 +371,40 @@ export function drawBody(ctx: CanvasRenderingContext2D, head: Head, spec: CatSpe
     leg(-190, 150, 130);
     leg(-115, 160, 120);
     ctx.fillStyle = furFill(ctx, spec);
-    bodyPart(ctx, spec, ellipsePath(-95, 118, 150, 88, -0.05), -95, 118, 150, 88);
+    ctx.beginPath();
+    ctx.ellipse(-95, 118, 150, 88, -0.05, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
     // Front legs come out from under a rounded chest that sits below the chin
     leg(-42, 140, 142);
     leg(42, 140, 142);
     ctx.fillStyle = furFill(ctx, spec);
-    const chest = ellipsePath(0, 128, 82, 74);
-    ctx.fill(chest);
-    ctx.stroke(chest);
-    shadeBody(ctx, spec, chest, 0, 128, 82, 74);
-    fillBelly(0, 138, 42, 52);
+    ctx.strokeStyle = INK;
+    ctx.lineWidth = 6;
+    ctx.beginPath();
+    ctx.ellipse(0, 128, 82, 74, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    if (belly) {
+      ctx.fillStyle = belly;
+      ctx.beginPath();
+      ctx.ellipse(0, 138, 42, 52, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
   } else if (spec.pose === 'chonk') {
     // Very round, pear-shaped body under a small head
-    const body = new Path2D();
-    body.moveTo(-70, 40);
-    body.bezierCurveTo(-210, 120, -200, 330, -40, 340);
-    body.lineTo(40, 340);
-    body.bezierCurveTo(200, 330, 210, 120, 70, 40);
-    body.closePath();
-    ctx.fill(body);
-    ctx.stroke(body);
+    ctx.beginPath();
+    ctx.moveTo(-70, 40);
+    ctx.bezierCurveTo(-210, 120, -200, 330, -40, 340);
+    ctx.lineTo(40, 340);
+    ctx.bezierCurveTo(200, 330, 210, 120, 70, 40);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
     if (spec.bodyPatch) {
       // Tabby patch over the left flank
       ctx.save();
-      ctx.clip(body);
+      ctx.clip();
       ctx.fillStyle = spec.bodyPatch;
       ctx.beginPath();
       ctx.ellipse(-150, 170, 70, 130, 0.15, 0, Math.PI * 2);
@@ -418,10 +419,9 @@ export function drawBody(ctx: CanvasRenderingContext2D, head: Head, spec: CatSpe
       }
       ctx.restore();
     }
-    shadeBody(ctx, spec, body, 0, 200, 170, 140);
     ctx.fillStyle = furFill(ctx, spec);
-    ctx.strokeStyle = line;
-    ctx.lineWidth = outline;
+    ctx.strokeStyle = INK;
+    ctx.lineWidth = 6;
     for (const side of [-1, 1]) {
       ctx.beginPath();
       ctx.ellipse(side * 55, 335, 34, 20, 0, 0, Math.PI * 2);
@@ -430,36 +430,48 @@ export function drawBody(ctx: CanvasRenderingContext2D, head: Head, spec: CatSpe
     }
   } else if (spec.pose === 'loaf') {
     // Lying down, body stretching to the left
-    const body = ellipsePath(-150, 55, 210, 95);
-    ctx.fill(body);
-    ctx.stroke(body);
-    shadeBody(ctx, spec, body, -150, 55, 210, 95);
-    fillBelly(-10, 105, 70, 40);
+    ctx.beginPath();
+    ctx.ellipse(-150, 55, 210, 95, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    if (belly) {
+      ctx.fillStyle = belly;
+      ctx.beginPath();
+      ctx.ellipse(-10, 105, 70, 40, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
   } else if (spec.pose === 'stand') {
     // Upright, arms flung out to the sides (or raised overhead with armsUp)
     for (const side of [-1, 1]) {
       ctx.fillStyle = furFill(ctx, spec);
-      const p = new Path2D();
-      p.roundRect(side * 50 - 28, 250, 56, 150, 28);
-      bodyPart(ctx, spec, p, side * 50, 325, 28, 75);
+      ctx.beginPath();
+      ctx.roundRect(side * 50 - 28, 250, 56, 150, 28);
+      ctx.fill();
+      ctx.stroke();
     }
     ctx.fillStyle = furFill(ctx, spec);
-    const body = ellipsePath(0, 190, 105, 140);
-    ctx.fill(body);
-    ctx.stroke(body);
-    shadeBody(ctx, spec, body, 0, 190, 105, 140);
-    fillBelly(0, 200, 60, 100);
+    ctx.beginPath();
+    ctx.ellipse(0, 190, 105, 140, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    if (belly) {
+      ctx.fillStyle = belly;
+      ctx.beginPath();
+      ctx.ellipse(0, 200, 60, 100, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
     // Arms drawn over the body, rotated outward from the shoulders
     for (const side of [-1, 1]) {
       ctx.save();
       ctx.translate(side * 82, 120);
       ctx.rotate(side * (spec.armsUp ? 0.4 : 1.15));
       ctx.fillStyle = furFill(ctx, spec);
-      ctx.strokeStyle = line;
-      ctx.lineWidth = outline;
-      const arm = new Path2D();
-      arm.roundRect(-24, -160, 48, 175, 24);
-      bodyPart(ctx, spec, arm, 0, -72, 24, 88);
+      ctx.strokeStyle = INK;
+      ctx.lineWidth = 6;
+      ctx.beginPath();
+      ctx.roundRect(-24, -160, 48, 175, 24);
+      ctx.fill();
+      ctx.stroke();
       ctx.fillStyle = spec.paws ?? furFill(ctx, spec);
       ctx.beginPath();
       ctx.ellipse(0, -156, 28, 24, 0, 0, Math.PI * 2);
@@ -468,25 +480,130 @@ export function drawBody(ctx: CanvasRenderingContext2D, head: Head, spec: CatSpe
       ctx.restore();
     }
   } else {
-    const body = ellipsePath(0, 140, 100, 90);
-    ctx.fill(body);
-    ctx.stroke(body);
-    shadeBody(ctx, spec, body, 0, 140, 100, 90);
-    fillBelly(0, 150, 50, 65);
-    if (inked()) chestTuft(ctx, belly ?? furFill(ctx, spec));
+    ctx.beginPath();
+    ctx.ellipse(0, 140, 100, 90, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    if (belly) {
+      ctx.fillStyle = belly;
+      ctx.beginPath();
+      ctx.ellipse(0, 150, 50, 65, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
     ctx.fillStyle = spec.tuxedo ? '#ffffff' : furFill(ctx, spec);
     for (const side of [-1, 1]) {
       ctx.beginPath();
       ctx.ellipse(side * 38, 215, 28, 20, 0, 0, Math.PI * 2);
       ctx.fill();
       ctx.stroke();
-      if (inked()) toeLines(ctx, side * 38, 215);
     }
   }
   ctx.restore();
 }
 
-/** Inked sit pose: a fluffy bib just under the chin. */
+// ---------------------------------------------------------------- inked bodies
+
+/** Sitting body proportions, in head-local units (the head is about 112 x 94). */
+interface SitShape {
+  /** Half-widths of the torso at the neck and the hips. */
+  neck: number;
+  hip: number;
+  top: number;
+  bottom: number;
+  /** Front legs: centre x, where their outline starts, and width. */
+  leg: [number, number, number];
+  /** Haunch (folded hind thigh): centre x, centre y, radii. */
+  haunch: [number, number, number, number];
+  /** Hind foot poking out past the haunch: centre x, centre y, radii. */
+  foot: [number, number, number, number];
+}
+
+const SIT: SitShape = { neck: 58, hip: 94, top: 60, bottom: 220, leg: [25, 112, 40], haunch: [74, 172, 46, 50], foot: [98, 214, 28, 12] };
+const CHONK: SitShape = { neck: 78, hip: 178, top: 40, bottom: 336, leg: [36, 236, 54], haunch: [140, 262, 66, 72], foot: [170, 330, 36, 14] };
+
+function drawInkedBody(ctx: CanvasRenderingContext2D, spec: CatSpec) {
+  const line = lineOf(spec);
+  const o = outlineWidth();
+  ctx.strokeStyle = line;
+  ctx.lineWidth = o;
+  ctx.lineJoin = 'round';
+  ctx.lineCap = 'round';
+  if (spec.pose === 'chonk') sitBody(ctx, spec, CHONK, line, o);
+  else if (spec.pose === 'loaf') loafBody(ctx, spec, line, o);
+  else if (spec.pose === 'quad') quadBody(ctx, spec, line, o);
+  else if (spec.pose === 'stand') standBody(ctx, spec, line, o);
+  else sitBody(ctx, spec, SIT, line, o);
+}
+
+function bellyOf(spec: CatSpec): string | undefined {
+  return spec.belly ?? (spec.tuxedo ? '#ffffff' : spec.muzzle);
+}
+
+function groundShadow(ctx: CanvasRenderingContext2D, x: number, y: number, rx: number) {
+  ctx.fillStyle = 'rgba(0,0,0,0.22)';
+  ctx.fill(ellipsePath(x, y, rx, rx * 0.13));
+}
+
+/** A limb or tail drawn as an outlined stroke along `path`. */
+function tube(ctx: CanvasRenderingContext2D, path: Path2D, w: number, fill: Paint, line: string, o: number) {
+  ctx.save();
+  ctx.strokeStyle = line;
+  ctx.lineWidth = w + o;
+  ctx.stroke(path);
+  ctx.strokeStyle = fill;
+  ctx.lineWidth = w - o;
+  ctx.stroke(path);
+  ctx.restore();
+}
+
+/**
+ * A leg hanging straight down from the body. Only its sides are outlined, from `fade` down,
+ * so it grows out of the chest instead of starting with a hard cap.
+ */
+function leg(ctx: CanvasRenderingContext2D, spec: CatSpec, x: number, top: number, bottom: number, w: number, fade: number) {
+  const x0 = x - w / 2;
+  const x1 = x + w / 2;
+  const mid = (top + bottom) / 2;
+  const p = new Path2D();
+  p.moveTo(x0, top);
+  p.lineTo(x1, top);
+  p.quadraticCurveTo(x1 + 3, mid, x1 - 1, bottom);
+  p.lineTo(x0 + 1, bottom);
+  p.quadraticCurveTo(x0 - 3, mid, x0, top);
+  p.closePath();
+  ctx.fillStyle = furFill(ctx, spec);
+  ctx.fill(p);
+  ctx.beginPath();
+  ctx.moveTo(x0 - 2, fade);
+  ctx.quadraticCurveTo(x0 - 3, mid, x0 + 1, bottom);
+  ctx.moveTo(x1 + 2, fade);
+  ctx.quadraticCurveTo(x1 + 3, mid, x1 - 1, bottom);
+  ctx.stroke();
+  paw(ctx, spec, x, bottom - w * 0.12, w * 0.62, w * 0.36);
+}
+
+function paw(ctx: CanvasRenderingContext2D, spec: CatSpec, x: number, y: number, rx: number, ry: number) {
+  ctx.fillStyle = spec.paws ?? (spec.tuxedo ? '#ffffff' : furFill(ctx, spec));
+  const p = ellipsePath(x, y, rx, ry);
+  ctx.fill(p);
+  ctx.stroke(p);
+  toeLines(ctx, x, y, rx, ry);
+}
+
+/** Two little creases that split a paw into toes. */
+function toeLines(ctx: CanvasRenderingContext2D, x: number, y: number, rx: number, ry: number) {
+  ctx.save();
+  ctx.lineWidth = 3;
+  for (const dx of [-rx * 0.34, rx * 0.34]) {
+    ctx.beginPath();
+    ctx.moveTo(x + dx, y + ry * 0.1);
+    ctx.lineTo(x + dx, y + ry * 0.85);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+/** A fluffy bib just under the chin. */
 function chestTuft(ctx: CanvasRenderingContext2D, fill: Paint) {
   ctx.save();
   ctx.fillStyle = fill;
@@ -504,17 +621,219 @@ function chestTuft(ctx: CanvasRenderingContext2D, fill: Paint) {
   ctx.restore();
 }
 
-/** Inked style: two little creases that split a paw into toes. */
-function toeLines(ctx: CanvasRenderingContext2D, x: number, y: number) {
+/** Seated cat, front view: tail, pear-shaped torso, folded haunches, hind feet, front legs. */
+function sitBody(ctx: CanvasRenderingContext2D, spec: CatSpec, g: SitShape, line: string, o: number) {
+  const fur = furFill(ctx, spec);
+  const H = g.bottom - g.top;
+  const belly = bellyOf(spec);
+  groundShadow(ctx, 0, g.bottom + 4, g.hip * 1.45);
+
+  // Tail sweeps out from behind the right hip and curls up
+  const tail = new Path2D();
+  tail.moveTo(g.hip * 0.5, g.bottom - 12);
+  tail.bezierCurveTo(g.hip * 1.55, g.bottom, g.hip * 1.6, g.top + H * 0.45, g.hip * 1.22, g.top + H * 0.18);
+  tube(ctx, tail, g.leg[2] * 0.8, fur, line, o);
+  if (spec.stripes) {
+    ctx.save();
+    ctx.setLineDash([10, 16]);
+    ctx.strokeStyle = spec.stripes;
+    ctx.lineWidth = g.leg[2] * 0.8 - o;
+    ctx.lineCap = 'butt';
+    ctx.stroke(tail);
+    ctx.restore();
+  }
+
+  // Haunches sit behind the torso: only their outer bulge shows, plus a thigh line drawn on it
+  const [hx, hy, hrx, hry] = g.haunch;
+  for (const side of [-1, 1]) {
+    const haunch = ellipsePath(side * hx, hy, hrx, hry, side * -0.3);
+    ctx.fillStyle = fur;
+    ctx.fill(haunch);
+    ctx.stroke(haunch);
+    shadeBody(ctx, spec, haunch, side * hx, hy, hrx, hry);
+  }
+
+  const torso = new Path2D();
+  torso.moveTo(-g.neck, g.top);
+  torso.bezierCurveTo(-g.neck - (g.hip - g.neck) * 0.3, g.top + H * 0.35, -g.hip * 1.04, g.top + H * 0.55, -g.hip * 0.94, g.bottom - 10);
+  torso.quadraticCurveTo(-g.hip * 0.88, g.bottom, -g.hip * 0.6, g.bottom);
+  torso.lineTo(g.hip * 0.6, g.bottom);
+  torso.quadraticCurveTo(g.hip * 0.88, g.bottom, g.hip * 0.94, g.bottom - 10);
+  torso.bezierCurveTo(g.hip * 1.04, g.top + H * 0.55, g.neck + (g.hip - g.neck) * 0.3, g.top + H * 0.35, g.neck, g.top);
+  torso.closePath();
+  ctx.fillStyle = fur;
+  ctx.fill(torso);
+  ctx.stroke(torso);
+  shadeBody(ctx, spec, torso, 0, g.top + H * 0.55, g.hip, H * 0.55);
+  if (spec.bodyPatch) bodyStripes(ctx, torso, g);
   ctx.save();
-  ctx.lineWidth = 3;
-  for (const dx of [-9, 9]) {
+  ctx.clip(torso);
+  ctx.lineWidth = o * 0.6;
+  for (const side of [-1, 1]) {
     ctx.beginPath();
-    ctx.moveTo(x + dx, y + 4);
-    ctx.lineTo(x + dx, y + 18);
+    ctx.moveTo(side * (hx - hrx * 0.55), g.bottom);
+    ctx.bezierCurveTo(side * (hx - hrx * 0.75), hy - hry * 0.5, side * (hx - hrx * 0.1), hy - hry * 1.05, side * (hx + hrx * 0.6), hy - hry * 0.9);
     ctx.stroke();
   }
   ctx.restore();
+
+  const [fx, fy, frx, fry] = g.foot;
+  for (const side of [-1, 1]) {
+    ctx.fillStyle = spec.paws ?? fur;
+    const foot = ellipsePath(side * fx, fy, frx, fry);
+    ctx.fill(foot);
+    ctx.stroke(foot);
+  }
+  const [lx, ltop, lw] = g.leg;
+  for (const side of [-1, 1]) leg(ctx, spec, side * lx, ltop, g.bottom, lw, ltop + lw * 0.5);
+  // Chest fur falls over the tops of the front legs
+  if (belly) {
+    ctx.save();
+    ctx.clip(torso);
+    ctx.fillStyle = belly;
+    ctx.fill(ellipsePath(0, g.top + H * 0.28, g.neck * 0.72, H * 0.3));
+    ctx.restore();
+  }
+  if (g === SIT) chestTuft(ctx, belly ?? fur);
+}
+
+/** Huh Cat: dark tabby stripes down the left flank. */
+function bodyStripes(ctx: CanvasRenderingContext2D, torso: Path2D, g: SitShape) {
+  ctx.save();
+  ctx.clip(torso);
+  ctx.strokeStyle = '#141216';
+  ctx.lineWidth = 9;
+  const H = g.bottom - g.top;
+  for (const k of [0.3, 0.42, 0.54, 0.66]) {
+    const y = g.top + H * k;
+    ctx.beginPath();
+    ctx.moveTo(-g.hip * 1.1, y);
+    ctx.quadraticCurveTo(-g.hip * 0.85, y - 14, -g.hip * 0.55, y + 6);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+/** Lying loaf stretching left from under the head: haunch contour, tucked paws, tail wrapped in front. */
+function loafBody(ctx: CanvasRenderingContext2D, spec: CatSpec, line: string, o: number) {
+  const fur = furFill(ctx, spec);
+  groundShadow(ctx, -150, 152, 230);
+  const body = new Path2D();
+  body.moveTo(40, 150);
+  body.lineTo(-300, 150);
+  body.quadraticCurveTo(-372, 150, -366, 70);
+  body.bezierCurveTo(-356, -28, -250, -46, -150, -42);
+  body.bezierCurveTo(-40, -40, 44, -8, 62, 62);
+  body.quadraticCurveTo(68, 150, 40, 150);
+  body.closePath();
+  ctx.fillStyle = fur;
+  ctx.fill(body);
+  ctx.stroke(body);
+  shadeBody(ctx, spec, body, -150, 55, 215, 100);
+  const belly = bellyOf(spec);
+  if (belly) {
+    ctx.save();
+    ctx.clip(body);
+    ctx.fillStyle = belly;
+    ctx.fill(ellipsePath(-10, 105, 70, 40));
+    ctx.restore();
+  }
+  // Thigh contour on the rump
+  ctx.save();
+  ctx.clip(body);
+  ctx.lineWidth = o * 0.6;
+  ctx.beginPath();
+  ctx.moveTo(-250, 150);
+  ctx.bezierCurveTo(-262, 70, -300, 20, -345, 28);
+  ctx.stroke();
+  ctx.restore();
+  for (const x of [-30, 22]) paw(ctx, spec, x, 150, 28, 14);
+  const tail = new Path2D();
+  tail.moveTo(-350, 120);
+  tail.bezierCurveTo(-370, 175, -250, 168, -150, 160);
+  tube(ctx, tail, 28, fur, line, o);
+}
+
+/** On all fours, three-quarter view: hind legs, tail, body with a haunch, front legs under the chest. */
+function quadBody(ctx: CanvasRenderingContext2D, spec: CatSpec, line: string, o: number) {
+  const fur = furFill(ctx, spec);
+  groundShadow(ctx, -80, 282, 200);
+  leg(ctx, spec, -190, 160, 278, 50, 170);
+  leg(ctx, spec, -112, 166, 270, 48, 176);
+  const tail = new Path2D();
+  tail.moveTo(-225, 70);
+  tail.bezierCurveTo(-300, 40, -300, -40, -262, -70);
+  tube(ctx, tail, 36, fur, line, o);
+  const body = new Path2D();
+  body.moveTo(30, 60);
+  body.bezierCurveTo(-40, 26, -180, 26, -228, 62);
+  body.bezierCurveTo(-266, 96, -258, 178, -214, 202);
+  body.bezierCurveTo(-150, 218, -60, 208, 10, 192);
+  body.bezierCurveTo(62, 172, 72, 92, 30, 60);
+  body.closePath();
+  ctx.fillStyle = fur;
+  ctx.fill(body);
+  ctx.stroke(body);
+  shadeBody(ctx, spec, body, -95, 118, 150, 88);
+  ctx.save();
+  ctx.clip(body);
+  ctx.lineWidth = o * 0.6;
+  ctx.beginPath();
+  ctx.moveTo(-140, 212);
+  ctx.bezierCurveTo(-150, 130, -190, 84, -240, 98);
+  ctx.stroke();
+  ctx.restore();
+  leg(ctx, spec, -42, 150, 282, 50, 190);
+  leg(ctx, spec, 42, 150, 282, 50, 190);
+  const belly = bellyOf(spec);
+  const chest = ellipsePath(0, 128, 78, 70);
+  ctx.save();
+  ctx.clip(chest);
+  ctx.fillStyle = fur;
+  ctx.fill(chest);
+  ctx.restore();
+  if (belly) {
+    ctx.fillStyle = belly;
+    ctx.fill(ellipsePath(0, 138, 40, 50));
+  }
+}
+
+/** Upright on hind legs: pear torso, legs, arms out to the sides or overhead. */
+function standBody(ctx: CanvasRenderingContext2D, spec: CatSpec, line: string, o: number) {
+  const fur = furFill(ctx, spec);
+  groundShadow(ctx, 0, 398, 110);
+  for (const side of [-1, 1]) leg(ctx, spec, side * 48, 260, 398, 52, 290);
+  const torso = new Path2D();
+  torso.moveTo(-62, 70);
+  torso.bezierCurveTo(-110, 130, -118, 260, -86, 304);
+  torso.quadraticCurveTo(0, 336, 86, 304);
+  torso.bezierCurveTo(118, 260, 110, 130, 62, 70);
+  torso.closePath();
+  ctx.fillStyle = fur;
+  ctx.fill(torso);
+  ctx.stroke(torso);
+  shadeBody(ctx, spec, torso, 0, 200, 105, 130);
+  const belly = bellyOf(spec);
+  if (belly) {
+    ctx.save();
+    ctx.clip(torso);
+    ctx.fillStyle = belly;
+    ctx.fill(ellipsePath(0, 210, 58, 96));
+    ctx.restore();
+  }
+  for (const side of [-1, 1]) {
+    ctx.save();
+    ctx.translate(side * 76, 120);
+    ctx.rotate(side * (spec.armsUp ? 0.4 : 1.15));
+    const arm = new Path2D();
+    arm.moveTo(0, 10);
+    arm.quadraticCurveTo(side * 6, -70, 0, -140);
+    tube(ctx, arm, 44, fur, line, o);
+    ctx.strokeStyle = line;
+    ctx.lineWidth = o;
+    paw(ctx, spec, 0, -150, 26, 22);
+    ctx.restore();
+  }
 }
 
 export function drawHead(ctx: CanvasRenderingContext2D, spec: CatSpec) {
