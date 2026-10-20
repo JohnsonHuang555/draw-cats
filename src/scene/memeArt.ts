@@ -25,7 +25,7 @@ export const MEME_SPECS: Record<string, CatSpec> = {
     pose: 'quad',
     // Like the meme: holds still for a second after being turned face up, then one quick turn,
     // a one-second stop, another turn, and so on
-    motion: { spin: 1, delay: 1, pause: 1 },
+    motion: { kind: 'spin', period: 1, delay: 1, pause: 1 },
     s: 0.8,
     dx: 45,
     dy: -78,
@@ -212,7 +212,7 @@ export const MEME_SPECS: Record<string, CatSpec> = {
     s: 0.75,
     dx: 70,
     dy: -10,
-    motion: { spin: 4 },
+    motion: { kind: 'spin', period: 4 },
     back: (ctx, a) => solidBg(ctx, a, '#f2f0ec'),
   },
   'r-smudge': {
@@ -494,7 +494,9 @@ export const MEME_SPECS: Record<string, CatSpec> = {
     eyes: 'dot',
     mouth: 'w',
     noCat: true,
-    back: (ctx, a) => bongoCat(ctx, a),
+    // Like OIIA Cat: still for a second, a one-second burst of drumming, a one-second rest, again
+    motion: { kind: 'drum', period: 1, delay: 1, pause: 1 },
+    back: (ctx, a, _head, bout) => bongoCat(ctx, a, bout),
   },
   'ssr-floppa': {
     // Caracal with black ear tufts and a serious face
@@ -935,7 +937,8 @@ function solidBg(ctx: CanvasRenderingContext2D, a: ArtArea, color: string) {
   ctx.fillRect(a.x, a.y, a.w, a.h);
 }
 
-function bongoCat(ctx: CanvasRenderingContext2D, a: ArtArea) {
+/** `bout`: seconds into a burst of drumming, or undefined to hold both paws up. */
+function bongoCat(ctx: CanvasRenderingContext2D, a: ArtArea, bout?: number) {
   solidBg(ctx, a, '#fbf8f2');
   const ly = (x: number) => a.y + 175 + (x - a.x) * 0.2;
   ctx.strokeStyle = INK;
@@ -1000,16 +1003,35 @@ function bongoCat(ctx: CanvasRenderingContext2D, a: ArtArea) {
   ctx.moveTo(a.x, ly(a.x));
   ctx.lineTo(a.x + a.w, ly(a.x + a.w));
   ctx.stroke();
-  // Paws on the edge, pink pads
-  for (const x of [a.x + 150, a.x + 362]) {
-    const y = ly(x) - 14;
+  // Paws: both raised while resting; while drumming they take turns slapping down, 8 hits a second
+  const hit = bout === undefined ? -1 : Math.floor(bout * 8) % 2;
+  [a.x + 150, a.x + 362].forEach((x, i) => {
+    const down = i === hit;
+    const y = ly(x) + (down ? -6 : -58);
     ctx.fillStyle = '#ffffff';
     ctx.strokeStyle = INK;
     ctx.lineWidth = 5;
     ctx.beginPath();
-    ctx.ellipse(x, y, 36, 30, 0, 0, Math.PI * 2);
+    ctx.ellipse(x, y, down ? 40 : 34, down ? 24 : 30, 0, 0, Math.PI * 2);
     ctx.fill();
     ctx.stroke();
+    if (down) {
+      // Slap lines around the paw
+      ctx.lineWidth = 4;
+      for (const [dx, dy, ex, ey] of [
+        [-50, -14, -66, -26],
+        [-44, -34, -54, -52],
+        [50, -14, 66, -26],
+        [44, -34, 54, -52],
+      ]) {
+        ctx.beginPath();
+        ctx.moveTo(x + dx, y + dy);
+        ctx.lineTo(x + ex, y + ey);
+        ctx.stroke();
+      }
+      return;
+    }
+    // A raised paw shows its pink pads
     ctx.fillStyle = '#ff9aa8';
     ctx.beginPath();
     ctx.ellipse(x, y + 6, 11, 9, 0, 0, Math.PI * 2);
@@ -1019,7 +1041,7 @@ function bongoCat(ctx: CanvasRenderingContext2D, a: ArtArea) {
       ctx.arc(x + dx, y - 12, 5, 0, Math.PI * 2);
       ctx.fill();
     }
-  }
+  });
 }
 
 /** Ragged hole in the ceiling around the head, in art coordinates. */

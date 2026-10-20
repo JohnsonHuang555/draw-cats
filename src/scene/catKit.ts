@@ -52,7 +52,8 @@ export type Pose = 'sit' | 'loaf' | 'stand' | 'chonk' | 'quad';
 export type Paint = string | CanvasGradient;
 export type Draw = (ctx: CanvasRenderingContext2D) => void;
 export type Head = { x: number; y: number; s: number };
-export type SceneDraw = (ctx: CanvasRenderingContext2D, a: ArtArea, head: Head) => void;
+/** `bout`: seconds into the current burst of a 'drum' Motion, undefined while still. */
+export type SceneDraw = (ctx: CanvasRenderingContext2D, a: ArtArea, head: Head, bout?: number) => void;
 
 export interface CatSpec {
   fur: string;
@@ -127,24 +128,38 @@ function inked() {
   return artStyle === 'inked';
 }
 
-/** The whole cat turning about a vertical axis, showing its mirrored back half the time. */
+/**
+ * Card Art motion. 'spin' turns the whole cat about a vertical axis, showing its mirrored back
+ * half the time; 'drum' has the spec's `back` scene play its paws (Bongo Cat).
+ */
 export interface Motion {
-  /** Seconds per full turn. */
-  spin: number;
-  /** Seconds the cat holds still, from when its card turns face up, before it starts turning. */
+  kind: 'spin' | 'drum';
+  /** Seconds one bout of movement lasts: one full turn, or one burst of drumming. */
+  period: number;
+  /** Seconds the cat holds still, from when its card turns face up, before it starts moving. */
   delay?: number;
-  /** If set, the cat stops for this many seconds after every turn, and each turn eases in and out. */
+  /** If set, the cat stops for this many seconds after every bout (and each turn eases in and out). */
   pause?: number;
 }
 
-/** How far round (in turns) a Motion has the cat at `time` seconds after its card turned face up. */
+/** Seconds into the current bout of movement, or undefined while the cat holds still. */
+export function boutAt(motion: Motion, time: number): number | undefined {
+  const { period, delay = 0, pause } = motion;
+  const t = time - delay;
+  if (t < 0) return undefined;
+  if (pause === undefined) return t % period;
+  const into = t % (period + pause);
+  return into < period ? into : undefined;
+}
+
+/** How far round (in turns) a spinning Motion has the cat at `time` seconds after its card turned face up. */
 export function turnsAt(motion: Motion, time: number): number {
-  const { spin, delay = 0, pause } = motion;
+  const { period, delay = 0, pause } = motion;
   const t = Math.max(0, time - delay);
-  if (pause === undefined) return t / spin;
-  const cycle = spin + pause;
+  if (pause === undefined) return t / period;
+  const cycle = period + pause;
   const done = Math.floor(t / cycle);
-  const p = Math.min(1, (t - done * cycle) / spin);
+  const p = Math.min(1, (t - done * cycle) / period);
   return done + (p < 0.5 ? 2 * p * p : 1 - (-2 * p + 2) ** 2 / 2);
 }
 
@@ -284,10 +299,11 @@ export function drawCat(ctx: CanvasRenderingContext2D, spec: CatSpec, a: ArtArea
   const s = spec.s ?? 1;
   const head = { x: a.x + a.w / 2 + (spec.dx ?? 0), y: a.y + a.h * 0.5 + (spec.dy ?? 0), s };
 
+  const motion = time === undefined ? undefined : spec.motion;
   ctx.save();
-  spec.back?.(ctx, a, head);
-  if (time !== undefined && spec.motion) {
-    const turn = turnsAt(spec.motion, time);
+  spec.back?.(ctx, a, head, motion?.kind === 'drum' ? boutAt(motion, time!) : undefined);
+  if (motion?.kind === 'spin') {
+    const turn = turnsAt(motion, time!);
     const cx = a.x + a.w / 2;
     ctx.translate(cx, 0);
     ctx.scale(Math.cos(turn * Math.PI * 2), 1);
