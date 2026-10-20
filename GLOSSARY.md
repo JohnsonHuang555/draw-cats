@@ -58,8 +58,12 @@ One visible attribute of a **Generated Cat**, such as fur, eyes, or headwear. Ra
 _Avoid_: attribute, property, gene
 
 **Generator Version**:
-The version of the rules that turn a **Cat Number** into a look. A given number looks the same forever within one version.
+The version of the rules that turn a **Cat Number** into its **Rarity** and **Traits**. A given number has the same Traits forever within one version. How those Traits are drawn is **Card Art**, and it isn't part of the version.
 _Avoid_: seed version, schema
+
+**Card Art**:
+The illustration on a **Card**'s face. It can be restyled at any time; a **Generated Cat** whose **Traits** are unchanged is still the same cat, even if its Card Art looks different.
+_Avoid_: card image, portrait, sprite
 
 **Meme Chance**:
 The probability (30%) that a single card draw yields a **Meme Cat** instead of a **Generated Cat**, after its **Rarity** is rolled.
