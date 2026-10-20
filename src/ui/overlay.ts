@@ -1,8 +1,11 @@
 import gsap from 'gsap';
 import type { Card } from '../domain/cards';
 import { traitShare } from '../domain/generated';
-import { PULL_COST, TAP_DAILY_CAP } from '../domain/economy';
-import { PITY_LIMIT, type PullKind } from '../domain/pull';
+// 魚乾機制暫時停用，之後再加回來。
+// import { PULL_COST, TAP_DAILY_CAP } from '../domain/economy';
+// 保底機制暫時停用，之後再加回來。
+// import { PITY_LIMIT, type PullKind } from '../domain/pull';
+import type { PullKind } from '../domain/pull';
 import { TRAIT_KEYS, TRAIT_LABELS, traitValue } from '../domain/traits';
 import { RARITY_CSS } from '../scene/palette';
 import { AlbumView } from './albumView';
@@ -56,21 +59,21 @@ export class Overlay {
       <header>
         <h1 class="title">喵喵抽卡</h1>
         <p class="subtitle">撕開卡包，蒐集你的貓貓</p>
-        <p class="tap-hint">點卡包可以賺小魚乾 🐟</p>
+        <!-- <p class="tap-hint">點卡包可以賺小魚乾 🐟</p> -->
       </header>
       <footer>
         <div class="actions">
           <button class="btn" data-open-album>卡冊</button>
           <button class="btn" data-pull="single">
-            單抽<small>🐟${PULL_COST.single}</small>
+            單抽<!-- <small>🐟\${PULL_COST.single}</small> -->
           </button>
           <button class="btn btn-primary" data-pull="ten">
-            十連抽<small>🐟${PULL_COST.ten}</small>
+            十連抽<!-- <small>🐟\${PULL_COST.ten}</small> -->
           </button>
         </div>
         <p class="rates">
           SSR 1.5% ・ SR 8.5% ・ R 30% ・ N 60%<br />
-          十連抽必得 SR 以上 ・ ${PITY_LIMIT} 抽內必得 SSR
+          十連抽必得 SR 以上<!-- ・ \${PITY_LIMIT} 抽內必得 SSR -->
         </p>
       </footer>
     `;
@@ -90,10 +93,10 @@ export class Overlay {
         <button class="btn" data-action="home">返回</button>
         <button class="btn" data-open-album>卡冊</button>
         <button class="btn" data-action="single">
-          再抽一次<small>🐟${PULL_COST.single}</small>
+          再抽一次<!-- <small>🐟\${PULL_COST.single}</small> -->
         </button>
         <button class="btn btn-primary" data-action="ten">
-          十連抽<small>🐟${PULL_COST.ten}</small>
+          十連抽<!-- <small>🐟\${PULL_COST.ten}</small> -->
         </button>
       </div>
     `;
@@ -133,13 +136,14 @@ export class Overlay {
         <strong>開發者面板</strong>
         <label><input type="checkbox" data-dev="forceSSR" /> 強制 SSR</label>
         <label><input type="checkbox" data-dev="forceFakeOut" /> 強制 Fake-out</label>
-        <button class="dev-fish">+10000 小魚乾</button>
+        <!-- <button class="dev-fish dev-add-fish">+10000 小魚乾</button> -->
         <button class="dev-fish dev-preview">預覽全部迷因貓</button>
         <button class="dev-clear">清空卡冊</button>
       `;
-      panel
-        .querySelector('.dev-fish')!
-        .addEventListener('click', () => this.onAddFish?.());
+      // 魚乾機制暫時停用。
+      // panel
+      //   .querySelector('.dev-add-fish')!
+      //   .addEventListener('click', () => this.onAddFish?.());
       panel.querySelector('.dev-preview')!.addEventListener('click', () => {
         panel.classList.remove('open');
         this.onPreviewMemes?.();
@@ -171,14 +175,15 @@ export class Overlay {
     );
   }
 
-  /** Fish balance and draws left until Pity. */
-  setWallet(fish: number, pity: number, tapped: number) {
-    this.wallet.innerHTML = `
-      <span class="wallet-fish">🐟 <b>${fish.toLocaleString()}</b></span>
-      <span class="wallet-pity">距離保底 <b>${PITY_LIMIT - pity}</b> 抽</span>
-      <span class="wallet-tap">今日點擊 <b>${tapped}</b>/${TAP_DAILY_CAP}</span>
-    `;
-  }
+  // 魚乾與保底機制暫時停用，之後再加回來。
+  // /** Fish balance and draws left until Pity. */
+  // setWallet(fish: number, pity: number, tapped: number) {
+  //   this.wallet.innerHTML = `
+  //     <span class="wallet-fish">🐟 <b>${fish.toLocaleString()}</b></span>
+  //     <span class="wallet-pity">距離保底 <b>${PITY_LIMIT - pity}</b> 抽</span>
+  //     <span class="wallet-tap">今日點擊 <b>${tapped}</b>/${TAP_DAILY_CAP}</span>
+  //   `;
+  // }
 
   /** "+1 🐟" rising from a screen point. */
   floatText(x: number, y: number, text: string) {

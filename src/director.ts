@@ -4,7 +4,8 @@ import type { AlbumStore } from './albumStore';
 import type { WalletStore } from './walletStore';
 import type { Sfx } from './audio/sfx';
 import { generatedSlots, memeSlots } from './domain/album';
-import { STARTER_GIFT, TAP_DAILY_CAP, TapLimiter, duplicateRefund } from './domain/economy';
+// 魚乾機制暫時停用，之後再加回來。
+// import { STARTER_GIFT, TAP_DAILY_CAP, TapLimiter, duplicateRefund } from './domain/economy';
 import type { Card } from './domain/cards';
 import { createPull, type PullKind, type PullResult } from './domain/pull';
 import { rank, type Rarity } from './domain/rarity';
@@ -81,8 +82,9 @@ export class Director {
   private autoTear?: () => void;
   /** Card shown in 3D while inspecting from the Album. */
   private albumCard: CardView | null = null;
-  private readonly tapLimiter = new TapLimiter();
-  private tapCapNoticed = false;
+  // 魚乾機制暫時停用。
+  // private readonly tapLimiter = new TapLimiter();
+  // private tapCapNoticed = false;
   private modeBeforeAlbum: Mode = 'idle';
   private albumPreview = false;
 
@@ -92,7 +94,8 @@ export class Director {
     private overlay: Overlay,
     private sfx: Sfx,
     private albumStore: AlbumStore,
-    private walletStore: WalletStore,
+    // 魚乾與保底機制暫時停用，之後改回 `private walletStore: WalletStore`。
+    _walletStore: WalletStore,
   ) {
     const { scene } = stage;
     this.particles = new Particles(stage.renderer.getPixelRatio());
@@ -127,15 +130,18 @@ export class Director {
       albumStore.clear();
       if (this.mode === 'album') this.refreshAlbum();
     };
-    overlay.onAddFish = () => {
-      walletStore.earn(10000);
-      this.refreshWallet();
-      overlay.toast('+10000 🐟（開發者）');
-    };
+    // 魚乾機制暫時停用。
+    // overlay.onAddFish = () => {
+    //   walletStore.earn(10000);
+    //   this.refreshWallet();
+    //   overlay.toast('+10000 🐟（開發者）');
+    // };
     input.onTap = (tap) => this.onTap(tap);
 
     this.showHome();
-    this.greet();
+    // 魚乾機制暫時停用：不發新手禮包／每日小魚乾。
+    // this.greet();
+    this.refreshWallet();
   }
 
   // ---------------------------------------------------------------- flow
@@ -143,10 +149,11 @@ export class Director {
   private async run(kind: PullKind) {
     if (this.busy) return;
     this.sfx.unlock();
-    if (!this.walletStore.canAfford(kind)) {
-      this.notEnoughFish();
-      return;
-    }
+    // 魚乾機制暫時停用：抽卡免費。
+    // if (!this.walletStore.canAfford(kind)) {
+    //   this.notEnoughFish();
+    //   return;
+    // }
     this.busy = true;
     this.sfx.click();
     void this.input.requestMotionPermission();
@@ -155,29 +162,30 @@ export class Director {
 
     let next: SummaryAction = kind;
     while (next !== 'home') {
-      this.walletStore.spend(next);
+      // this.walletStore.spend(next);
       const result = createPull(next, {
         forceRarity: this.overlay.dev.forceSSR ? 'SSR' : undefined,
         forceFakeOut: this.overlay.dev.forceFakeOut,
-        pity: this.walletStore.wallet.pity,
+        // 保底機制暫時停用。
+        // pity: this.walletStore.wallet.pity,
       });
-      this.walletStore.setPity(result.pity);
+      // this.walletStore.setPity(result.pity);
       const newCopies = this.albumStore.record(result.copies);
-      const refund = duplicateRefund(result.copies, newCopies);
-      this.walletStore.earn(refund);
+      // const refund = duplicateRefund(result.copies, newCopies);
+      // this.walletStore.earn(refund);
       this.refreshWallet();
 
       await this.presentPack(result);
       await this.tear(result);
       await this.deal(result, newCopies);
       await this.revealAll();
-      this.overlay.setRefund(refund);
+      // this.overlay.setRefund(refund);
       next = await this.summary();
       // Stay on the Summary until the player picks something they can afford.
-      while (next !== 'home' && !this.walletStore.canAfford(next)) {
-        this.notEnoughFish();
-        next = await this.summary();
-      }
+      // while (next !== 'home' && !this.walletStore.canAfford(next)) {
+      //   this.notEnoughFish();
+      //   next = await this.summary();
+      // }
       this.overlay.showWallet(false);
       await this.clearCards();
     }
@@ -186,8 +194,9 @@ export class Director {
   }
 
   private refreshWallet() {
-    const { fish, pity } = this.walletStore.wallet;
-    this.overlay.setWallet(fish, pity, this.walletStore.tappedToday());
+    // 魚乾與保底機制暫時停用，錢包列不顯示任何東西。
+    // const { fish, pity } = this.walletStore.wallet;
+    // this.overlay.setWallet(fish, pity, this.walletStore.tappedToday());
   }
 
   /**
@@ -203,6 +212,8 @@ export class Director {
     // Squish feedback even when nothing is earned, so the pack never feels dead.
     gsap.killTweensOf(pack.floater.scale);
     gsap.fromTo(pack.floater.scale, { x: 1.06, y: 0.94 }, { x: 1, y: 1, duration: 0.35, ease: 'elastic.out(1, 0.4)' });
+    // 魚乾機制暫時停用：點卡包只有回彈，不賺小魚乾。
+    /*
     if (!this.tapLimiter.allow(performance.now())) return;
     if (this.walletStore.claimTap() === 0) {
       if (!this.tapCapNoticed) {
@@ -222,23 +233,25 @@ export class Director {
       spread: new Vector3(PACK_W * 0.3, PACK_H * 0.3, 0.1),
     });
     this.refreshWallet();
+    */
   }
 
-  private notEnoughFish() {
-    this.sfx.click();
-    this.overlay.toast('小魚乾不足！明天再來領每日小魚乾 🐟');
-  }
+  // 魚乾機制暫時停用。
+  // private notEnoughFish() {
+  //   this.sfx.click();
+  //   this.overlay.toast('小魚乾不足！明天再來領每日小魚乾 🐟');
+  // }
 
-  /** Starter Gift on the first visit, then the Daily Gift once per local day. */
-  private greet() {
-    const daily = this.walletStore.claimDaily();
-    if (this.walletStore.isNew) {
-      this.overlay.toast(`新手禮包 +${STARTER_GIFT} 🐟 ・ 每日小魚乾 +${daily} 🐟`);
-    } else if (daily > 0) {
-      this.overlay.toast(`每日小魚乾 +${daily} 🐟`);
-    }
-    this.refreshWallet();
-  }
+  // /** Starter Gift on the first visit, then the Daily Gift once per local day. */
+  // private greet() {
+  //   const daily = this.walletStore.claimDaily();
+  //   if (this.walletStore.isNew) {
+  //     this.overlay.toast(`新手禮包 +${STARTER_GIFT} 🐟 ・ 每日小魚乾 +${daily} 🐟`);
+  //   } else if (daily > 0) {
+  //     this.overlay.toast(`每日小魚乾 +${daily} 🐟`);
+  //   }
+  //   this.refreshWallet();
+  // }
 
   private showHome() {
     this.backdrop.tint.copy(IDLE_TINT);
