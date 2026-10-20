@@ -46,11 +46,8 @@ const meme = (
 export const MEME_CATS: MemeCat[] = [
   // SSR
   meme('ssr-oiia', 'OIIA Cat', '旋轉貓・OIIA OIIA！', 'SSR', 280),
-  meme('ssr-grumpy', 'Grumpy Cat', '不爽貓・我不要。', 'SSR', 0),
   meme('ssr-bongo', 'Bongo Cat', '拍桌貓・什麼都能打成鼓', 'SSR', 200),
-  meme('ssr-floppa', 'Big Floppa', '大佛洛帕・浴缸裡的大人物', 'SSR', 25),
   meme('ssr-longcat', 'Longcat', '長貓・長～～～～貓', 'SSR', 150),
-  meme('ssr-cheez', 'Cheezburger Cat', 'I CAN HAS CHEEZBURGER?', 'SSR', 40),
   // SR
   meme('sr-nyan', 'Nyan Cat', '彩虹貓・飛越宇宙', 'SR', 235),
   meme('sr-chipi', 'Chipi Chipi Cat', 'Chipi Chipi Chapa Chapa', 'SR', 290),
@@ -66,6 +63,9 @@ export const MEME_CATS: MemeCat[] = [
   meme('sr-bingus', 'Bingus', '沒毛也很可愛', 'SR', 15),
   meme('sr-sideeye', 'Side Eye Cat', '斜眼貓・你確定？', 'SR', 260),
   // R
+  meme('ssr-grumpy', 'Grumpy Cat', '不爽貓・我不要。', 'R', 0),
+  meme('ssr-floppa', 'Big Floppa', '大佛洛帕・浴缸裡的大人物', 'R', 25),
+  meme('ssr-cheez', 'Cheezburger Cat', 'I CAN HAS CHEEZBURGER?', 'R', 40),
   meme('r-smudge', 'Smudge', '沙拉貓・我又沒吃你的沙拉', 'R', 100),
   meme('r-keyboard', 'Keyboard Cat', '鍵盤貓・演奏完畢請下台', 'R', 220),
   meme('r-banana', '香蕉貓', '嗚嗚嗚嗚嗚', 'R', 50),

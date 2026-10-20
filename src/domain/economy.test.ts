@@ -58,12 +58,12 @@ describe('Wallet', () => {
   });
 
   it('refunds Fish for duplicate Copies by Rarity, never for New Cards', () => {
-    const grumpy = MEME_CATS.find((c) => c.id === 'ssr-grumpy')!;
+    const oiia = MEME_CATS.find((c) => c.id === 'ssr-oiia')!;
     const n = generateCat(numbersOf('N')[0]);
     const copies: Copy[] = [
       { index: 0, card: n },
-      { index: 1, card: grumpy },
-      { index: 2, card: grumpy },
+      { index: 1, card: oiia },
+      { index: 2, card: oiia },
     ];
     // Copy 1 is the New Card; copy 2 is a duplicate SSR; copy 0 is a duplicate of an owned card.
     expect(duplicateRefund(copies, new Set([1]))).toBe(10 + 400);
