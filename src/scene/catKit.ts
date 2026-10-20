@@ -134,10 +134,12 @@ function inked() {
  * - 'scene' hands the spec's `back` scene the time into each bout, to animate itself (Bongo, Nyan)
  * - 'jump' bounces the whole cat, one hop per period
  * - 'mouth' shows the spec's mouth for the first half of each period and `mouth` for the rest
- * - 'nod' bobs the head up and down; 'shake' turns it from side to side (the body stays put)
+ * - 'nod' bobs the head up and down; 'shake' turns it from side to side; 'sway' swings it along a
+ *   V, low in the middle and up at either side (the body stays put for all three)
+ * - 'stretch' lowers the head and raises it again, so a body hung off it shrinks and grows (Longcat)
  */
 export interface Motion {
-  kind: 'spin' | 'scene' | 'jump' | 'mouth' | 'nod' | 'shake';
+  kind: 'spin' | 'scene' | 'jump' | 'mouth' | 'nod' | 'shake' | 'sway' | 'stretch';
   /** Seconds one bout of movement lasts: one turn, one burst of drumming, one hop, nod or shake. */
   period: number;
   /** 'mouth' only: the mouth shown while the spec's own mouth is shut. */
@@ -303,12 +305,14 @@ function ellipsePath(x: number, y: number, rx: number, ry: number, rot = 0): Pat
 /** `time` (seconds since the card turned face up) plays the spec's motion; leave it out for a still picture. */
 export function drawCat(ctx: CanvasRenderingContext2D, spec: CatSpec, a: ArtArea, time?: number) {
   const s = spec.s ?? 1;
-  const head = { x: a.x + a.w / 2 + (spec.dx ?? 0), y: a.y + a.h * 0.5 + (spec.dy ?? 0), s };
-
   const motion = time === undefined ? undefined : spec.motion;
   const bout = motion && motion.kind !== 'spin' ? boutAt(motion, time!) : undefined;
   // How far through the current bout, 0 to 1; only set while moving
   const phase = motion && bout !== undefined ? bout / motion.period : undefined;
+  // 'stretch' lowers the head and back up again; scenes that hang a body off the head follow it
+  const sink = motion?.kind === 'stretch' && phase !== undefined ? 70 * (0.5 - 0.5 * Math.cos(phase * Math.PI * 2)) : 0;
+  const head = { x: a.x + a.w / 2 + (spec.dx ?? 0), y: a.y + a.h * 0.5 + (spec.dy ?? 0) + sink, s };
+
   ctx.save();
   spec.back?.(ctx, a, head, motion?.kind === 'scene' ? bout : undefined);
   if (motion?.kind === 'spin') {
@@ -331,6 +335,11 @@ export function drawCat(ctx: CanvasRenderingContext2D, spec: CatSpec, a: ArtArea
         ctx.rotate(0.05 * swing);
       }
       if (motion?.kind === 'shake') ctx.rotate(0.22 * swing);
+      if (motion?.kind === 'sway') {
+        // Along a V: lowest in the middle, up and leaning out at either side
+        ctx.translate(40 * swing, -22 * Math.abs(swing));
+        ctx.rotate(0.18 * swing);
+      }
     }
     ctx.rotate(spec.tilt ?? 0);
     ctx.scale(s, s);

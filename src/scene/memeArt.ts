@@ -98,7 +98,7 @@ export const MEME_SPECS: Record<string, CatSpec> = {
   },
   'sr-chipi': {
     // Grey-brown tabby kitten pressed up to the camera inside a metal cat feeder, side-eyeing
-    // you, head tipped; it sways its head from side to side to the song
+    // you, head tipped; its head swings along a V to the song
     fur: '#7c726a',
     stripes: '#3e362e',
     muzzle: '#c89a6a',
@@ -110,7 +110,7 @@ export const MEME_SPECS: Record<string, CatSpec> = {
     s: 1.6,
     dx: 20,
     dy: 55,
-    motion: { kind: 'shake', period: 0.8 },
+    motion: { kind: 'sway', period: 1 },
     back: (ctx, a) => feederBg(ctx, a),
     front: (ctx, a) => bigText(ctx, 'CHIPI CHIPI', a.x + a.w / 2, a.y + 40, 40, '#ffe14a', 0),
   },
@@ -546,11 +546,13 @@ export const MEME_SPECS: Record<string, CatSpec> = {
     },
   },
   'ssr-longcat': {
+    // Held up under the arms, the long white body running off the bottom; it stretches and shrinks
     fur: '#ffffff',
     eyes: 'dot',
     mouth: 'w',
     s: 0.72,
     dy: -120,
+    motion: { kind: 'stretch', period: 1.6 },
     back: (ctx, a, head) => {
       ctx.fillStyle = '#ffffff';
       ctx.strokeStyle = INK;
