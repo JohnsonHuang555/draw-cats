@@ -114,11 +114,11 @@ export interface CatSpec {
 export const INK = '#241a2e';
 
 /**
- * How cats are drawn. 'inked' is the restyle being prototyped in art-lab.html: heavy outlines
- * tinted by the fur, fine inner lines, shading, fur tufts and per-cat head shapes (ADR 0003).
+ * How cats are drawn. 'inked' (the game's style): heavy outlines tinted by the fur, fine inner
+ * lines, shading, fur tufts and per-cat head shapes (ADR 0003). art-lab.html compares it to 'classic'.
  */
 export type ArtStyle = 'classic' | 'inked';
-let artStyle: ArtStyle = 'classic';
+let artStyle: ArtStyle = 'inked';
 
 export function setArtStyle(style: ArtStyle) {
   artStyle = style;

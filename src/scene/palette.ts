@@ -23,6 +23,6 @@ export function rarityColor(rarity: Rarity): Color {
 export const FOIL_STRENGTH: Record<Rarity, number> = {
   N: 0,
   R: 0,
-  SR: 0.5,
-  SSR: 1,
+  SR: 0.2,
+  SSR: 0.4,
 };
